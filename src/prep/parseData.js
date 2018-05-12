@@ -14,7 +14,9 @@ rawData.elements.forEach((d, i) => {
                 nodes.push({
                     wayId: lastWay.id,
                     nodeId: n.id,
-                    wayNodeIdx: j
+                    wayNodeIdx: j,
+                    lat: n.lat,
+                    lon: n.lon
                 });
             });
         }
