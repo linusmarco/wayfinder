@@ -51,7 +51,14 @@ function buildMap(containerId) {
             .center([0, 42.4892843])
             .translate([innerWidth / 2, innerHeight / 2]);
 
-        let geoPath = d3.geoPath().projection(mercatorProj);
+        let nodeDist = function(nodeFrom, nodeTo) {
+            return (
+                d3.geoDistance(
+                    [nodeFrom.lon, nodeFrom.lat],
+                    [nodeTo.lon, nodeTo.lat]
+                ) * 1000000
+            );
+        };
 
         const start = {
             way: 9589326,
@@ -65,64 +72,76 @@ function buildMap(containerId) {
         walkThisWay(start.way, start.wayNodeIdx, 0);
         console.log('walked');
 
-        const nodes = [];
+        let nodes = [];
         Object.keys(ways).forEach(w => {
             ways[w].forEach(n => {
                 n.loc = mercatorProj([n.lon, n.lat]);
-
-                g
-                    .append('circle')
-                    .attr('class', `node node-${n.dist}`)
-                    .attr('cx', n.loc[0])
-                    .attr('cy', n.loc[1])
-                    .attr('r', 1.5)
-                    .attr('fill', 'blue')
-                    .attr('stroke', 'none')
-                    .attr('opacity', 0);
-
                 nodes.push(n);
             });
         });
 
-        nodes.sort((a, b) => d3.ascending(a.dist, b.dist));
+        nodes.sort((a, b) => {
+            if (a.dist > b.dist) return 1;
+            else if (a.dist < b.dist) return -1;
+            else return 0;
+            // return d3.ascending(a.dist, b.dist)
+        });
 
         const maxDist = nodes[nodes.length - 1].dist;
 
-        const distScale = d3
+        const timeScale = d3
+            .scaleQuantize()
+            .domain([0, maxDist])
+            .range(Array.apply(null, { length: 300 }).map(Number.call, Number));
+
+        const colorScale = d3
             .scaleLinear()
             .domain([0, maxDist])
             .range([50, 100]);
 
-        let curDist = 0;
+        const dots = g
+            .selectAll('.node')
+            .data(nodes)
+            .enter()
+            .append('circle')
+            .attr('class', n => `node node-${timeScale(n.dist)}`)
+            .attr('cx', n => n.loc[0])
+            .attr('cy', n => n.loc[1])
+            .attr('r', 1.5)
+            .attr('fill', n => `hsl(240, 100%, ${colorScale(n.dist)}%)`)
+            .attr('stroke', 'none')
+            .attr('opacity', 0);
+
+        let curTime = 0;
         const show = setInterval(() => {
-            console.log(curDist);
+            console.log(curTime);
 
-            showNodes(curDist);
-            curDist++;
+            showNodes(curTime);
+            curTime++;
 
-            if (curDist > maxDist) clearInterval(show);
+            if (curTime === 300) clearInterval(show);
         }, 100);
 
-        function showNodes(dist) {
-            g
-                .selectAll(`.node-${dist}`)
-                .attr('opacity', 1)
-                .attr('fill', `hsl(240, 100%, ${distScale(dist)}%)`);
+        function showNodes(time) {
+            dots.filter(`.node-${time}`).attr('opacity', 1);
         }
 
         function walkThisWay(wayId, startIdx, initialDist) {
-            if ((ways[wayId][startIdx].dist || Infinity) < initialDist) {
+            const startNode = ways[wayId][startIdx];
+
+            if ((startNode.dist || Infinity) < initialDist) {
                 return;
             }
-            ways[wayId][startIdx].dist = initialDist;
+            startNode.dist = initialDist;
 
             let nextUp = startIdx + 1;
             let nextDown = startIdx - 1;
 
-            let wayNode;
+            let wayNode, lastWayNode;
 
+            lastWayNode = startNode;
             while ((wayNode = ways[wayId][nextUp])) {
-                const dist = initialDist + Math.abs(startIdx - nextUp);
+                const dist = lastWayNode.dist + nodeDist(lastWayNode, wayNode);
 
                 if ((wayNode.dist || Infinity) < dist) {
                     break;
@@ -133,11 +152,13 @@ function buildMap(containerId) {
                     walkThisWay(int.wayId, int.wayNodeIdx, dist);
                 });
 
+                lastWayNode = wayNode;
                 nextUp++;
             }
 
+            lastWayNode = startNode;
             while ((wayNode = ways[wayId][nextDown])) {
-                const dist = initialDist + Math.abs(startIdx - nextDown);
+                const dist = lastWayNode.dist + nodeDist(lastWayNode, wayNode);
 
                 if ((wayNode.dist || Infinity) < dist) {
                     break;
@@ -148,6 +169,7 @@ function buildMap(containerId) {
                     walkThisWay(int.wayId, int.wayNodeIdx, dist);
                 });
 
+                lastWayNode = wayNode;
                 nextDown--;
             }
         }
