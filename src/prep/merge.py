@@ -12,8 +12,8 @@ def main():
     nodes['wayId'] = nodes['wayId'].astype(str)
     nodes['nodeId'] = nodes['nodeId'].astype(int)
     nodes['wayNodeIdx'] = nodes['wayNodeIdx'].astype(int)
-    nodes['lat'] = nodes['lat'].astype(int)
-    nodes['lon'] = nodes['lon'].astype(int)
+    nodes['lat'] = nodes['lat'].astype(float)
+    nodes['lon'] = nodes['lon'].astype(float)
 
     # sort and create overall node index
     nodes.sort_values(by=['wayId', 'wayNodeIdx'])
@@ -44,7 +44,7 @@ def main():
 
     # write final file
     with open('../data/final.json', 'w') as f:
-        json.dump(obj, f)
+        json.dump(obj, f, indent=4)
 
 
 def get_intersections(group):
