@@ -1,5 +1,4 @@
 function buildMap(containerId) {
-    // size globals
     const width = 960;
     const height = 700;
 
@@ -10,18 +9,15 @@ function buildMap(containerId) {
         left: 0
     };
 
-    // calculate dimensions without margins
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
-    // create svg element
     let svg = d3
         .select(containerId)
         .append('svg')
         .attr('height', height)
         .attr('width', width);
 
-    // create inner group element
     let g = svg
         .append('g')
         .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
@@ -43,10 +39,8 @@ function buildMap(containerId) {
             .selectAll('.node')
             .attr('transform', d3.event.transform)
             .attr('r', 2 / d3.event.transform.k);
-        // .style('font-size', 10 / d3.event.transform.k);
     }
 
-    // read in our data
     async function draw() {
         const ways = await d3.json('../data/final.json');
 
@@ -68,12 +62,6 @@ function buildMap(containerId) {
             n => n.nodeId === start.node
         );
 
-        let usedNodes = [];
-
-        // const node = ways[start.way].find(n => n.nodeId === start.node);
-
-        // let nodes = [];
-
         walkThisWay(start.way, start.wayNodeIdx, 0);
         console.log('walked');
 
@@ -92,29 +80,13 @@ function buildMap(containerId) {
                     .attr('stroke', 'none')
                     .attr('opacity', 0);
 
-                // g
-                //     .append('text')
-                //     .attr('class', `node node-${n.dist}`)
-                //     .attr('x', n.loc[0])
-                //     .attr('y', n.loc[1])
-                //     .attr('text-anchor', 'middle')
-                //     .attr('dominant-baseline', 'middle')
-                //     .attr('fill', 'black')
-                //     .attr('stroke', 'none')
-                //     .style('font-size', 10)
-                //     // .attr('opacity', 0)
-                //     .attr('opacity', 1)
-                //     .text(n.dist);
-
                 nodes.push(n);
             });
         });
 
         nodes.sort((a, b) => d3.ascending(a.dist, b.dist));
-        console.log(nodes);
 
         const maxDist = nodes[nodes.length - 1].dist;
-        console.log(maxDist);
 
         const distScale = d3
             .scaleLinear()
@@ -179,20 +151,6 @@ function buildMap(containerId) {
                 nextDown--;
             }
         }
-
-        // Object.keys(ways).forEach(w => {
-        //     ways[w].forEach(n => {
-        //         const pt = mercatorProj([n.lon, n.lat]);
-
-        //         g
-        //             .append('circle')
-        //             .attr('cx', pt[0])
-        //             .attr('cy', pt[1])
-        //             .attr('r', 2)
-        //             .style('fill', 'black')
-        //             .style('stroke', 'none');
-        //     });
-        // });
     }
 
     draw();
