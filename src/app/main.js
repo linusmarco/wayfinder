@@ -2,6 +2,8 @@ function buildMap(containerId) {
     const width = 960;
     const height = 700;
 
+    const lineWidth = 1.5;
+
     const margin = {
         top: 0,
         right: 0,
@@ -38,7 +40,7 @@ function buildMap(containerId) {
         g
             .selectAll('.node')
             .attr('transform', d3.event.transform)
-            .attr('r', 1.5 / d3.event.transform.k);
+            .attr('stroke-width', lineWidth / d3.event.transform.k);
     }
 
     async function draw() {
@@ -69,6 +71,8 @@ function buildMap(containerId) {
             n => n.nodeId === start.node
         );
 
+        console.log(start);
+
         walkThisWay(start.way, start.wayNodeIdx, 0);
         console.log('walked');
 
@@ -76,18 +80,15 @@ function buildMap(containerId) {
         Object.keys(ways).forEach(w => {
             ways[w].forEach(n => {
                 n.loc = mercatorProj([n.lon, n.lat]);
-                nodes.push(n);
+                n.pLoc = mercatorProj([n.pLon, n.pLat]);
+
+                if (n.pLon) nodes.push(n);
             });
         });
 
-        nodes.sort((a, b) => {
-            if (a.dist > b.dist) return 1;
-            else if (a.dist < b.dist) return -1;
-            else return 0;
-            // return d3.ascending(a.dist, b.dist)
-        });
+        const maxDist = d3.max(nodes, n => n.dist);
 
-        const maxDist = nodes[nodes.length - 1].dist;
+        console.log(nodes);
 
         const timeScale = d3
             .scaleQuantize()
@@ -99,17 +100,18 @@ function buildMap(containerId) {
             .domain([0, maxDist])
             .range([50, 100]);
 
-        const dots = g
+        const lines = g
             .selectAll('.node')
             .data(nodes)
             .enter()
-            .append('circle')
+            .append('line')
             .attr('class', n => `node node-${timeScale(n.dist)}`)
-            .attr('cx', n => n.loc[0])
-            .attr('cy', n => n.loc[1])
-            .attr('r', 1.5)
-            .attr('fill', n => `hsl(240, 100%, ${colorScale(n.dist)}%)`)
-            .attr('stroke', 'none')
+            .attr('x1', n => n.pLoc[0])
+            .attr('y1', n => n.pLoc[1])
+            .attr('x2', n => n.loc[0])
+            .attr('y2', n => n.loc[1])
+            .attr('stroke', n => `hsl(240, 100%, ${colorScale(n.dist)}%)`)
+            .attr('stroke-width', lineWidth)
             .attr('opacity', 0);
 
         let curTime = 0;
@@ -123,7 +125,7 @@ function buildMap(containerId) {
         }, 100);
 
         function showNodes(time) {
-            dots.filter(`.node-${time}`).attr('opacity', 1);
+            lines.filter(`.node-${time}`).attr('opacity', 1);
         }
 
         function walkThisWay(wayId, startIdx, initialDist) {
@@ -147,6 +149,8 @@ function buildMap(containerId) {
                     break;
                 }
                 wayNode.dist = dist;
+                wayNode.pLon = lastWayNode.lon;
+                wayNode.pLat = lastWayNode.lat;
 
                 wayNode.ints.forEach(int => {
                     walkThisWay(int.wayId, int.wayNodeIdx, dist);
@@ -164,6 +168,8 @@ function buildMap(containerId) {
                     break;
                 }
                 wayNode.dist = dist;
+                wayNode.pLon = lastWayNode.lon;
+                wayNode.pLat = lastWayNode.lat;
 
                 wayNode.ints.forEach(int => {
                     walkThisWay(int.wayId, int.wayNodeIdx, dist);
