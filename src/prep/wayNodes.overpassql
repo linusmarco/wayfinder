@@ -8,7 +8,7 @@ way
 
 foreach.relevant_ways->.this_way{
   .this_way;
-  out tags;
+  out body;
 
   node(w.this_way)->.this_ways_nodes;
 
