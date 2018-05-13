@@ -38,7 +38,7 @@ function buildMap(containerId) {
         g
             .selectAll('.node')
             .attr('transform', d3.event.transform)
-            .attr('r', 2 / d3.event.transform.k);
+            .attr('r', 1.5 / d3.event.transform.k);
     }
 
     async function draw() {
@@ -75,7 +75,7 @@ function buildMap(containerId) {
                     .attr('class', `node node-${n.dist}`)
                     .attr('cx', n.loc[0])
                     .attr('cy', n.loc[1])
-                    .attr('r', 2)
+                    .attr('r', 1.5)
                     .attr('fill', 'blue')
                     .attr('stroke', 'none')
                     .attr('opacity', 0);
