@@ -2,7 +2,7 @@
 
 way
   ["highway"]
-  ["highway"!~"footway|cycleway|path|service|track"]
+  ["highway"!~"footway|cycleway|path|service|track|pedestrian|steps"]
   (area:##AREAID##)
   ->.relevant_ways;
 
