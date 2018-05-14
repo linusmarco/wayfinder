@@ -85,6 +85,8 @@ nodes.forEach(n => {
     n.color = `hsl(${colors(n.originId)}, 100%, ${colorScale(n.dist)}%)`;
 });
 
+nodes.sort((a, b) => d3.ascending(a.dist, b.dist));
+
 fs.writeFileSync('../data/walked.json', JSON.stringify(nodes));
 
 function walkThisWay(wayId, startIdx, initialDist, originId) {
