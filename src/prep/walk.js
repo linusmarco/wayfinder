@@ -56,6 +56,11 @@ config.origins.forEach(o => {
 
 config.origins.forEach((o, i) => {
     walkThisWay(o.way, o.wayNodeIdx, 0, 0, i);
+
+    ways[o.way][o.wayNodeIdx].ints.forEach(int => {
+        walkThisWay(int.wayId, int.wayNodeIdx, 0, 0, i);
+    });
+
     console.log(`walked ${i}`);
 });
 
