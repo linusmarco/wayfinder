@@ -25,15 +25,6 @@ const rawNodes = require('../data/nodes.json');
 const geoJSON = {
     type: 'FeatureCollection',
     features: rawNodes.map(n => {
-        config.origins.forEach(o => {
-            const dist = nodeDist(o, n);
-            if (o.dist === undefined || dist < o.dist) {
-                o.dist = dist;
-                o.way = n.wayId;
-                o.node = n.nodeId;
-            }
-        });
-
         return {
             type: 'Feature',
             geometry: {
@@ -43,6 +34,21 @@ const geoJSON = {
         };
     })
 };
+
+Object.keys(ways).forEach(w => {
+    ways[w].forEach(n => {
+        config.origins.forEach(o => {
+            const dist = nodeDist(o, n);
+            if (o.dist === undefined || dist < o.dist) {
+                o.dist = dist;
+                o.way = w;
+                o.node = n.nodeId;
+            }
+        });
+    });
+});
+
+console.log(config.origins);
 
 let mercatorProj = d3
     .geoMercator()
@@ -54,15 +60,22 @@ config.origins.forEach(o => {
     o.wayNodeIdx = ways[o.way].findIndex(n => n.nodeId === o.node);
 });
 
+const walks = [];
+
 config.origins.forEach((o, i) => {
-    walkThisWay(o.way, o.wayNodeIdx, 0, 0, i);
+    walks.push([o.way, o.wayNodeIdx, 0, 0, i, walks]);
 
     ways[o.way][o.wayNodeIdx].ints.forEach(int => {
-        walkThisWay(int.wayId, int.wayNodeIdx, 0, 0, i);
+        walks.push([int.wayId, int.wayNodeIdx, 0, 0, i, walks]);
     });
-
-    console.log(`walked ${i}`);
 });
+
+while (walks.length > 0) {
+    console.log(`walk stack: ${walks.length}`);
+    walkThisWay(...walks[0]);
+    walks.shift();
+}
+console.log('walked!');
 
 let nodes = [];
 Object.keys(ways).forEach(w => {
@@ -139,7 +152,14 @@ function nodeDist(nodeFrom, nodeTo) {
     );
 }
 
-function walkThisWay(wayId, startIdx, initialDist, initialTime, originId) {
+function walkThisWay(
+    wayId,
+    startIdx,
+    initialDist,
+    initialTime,
+    originId,
+    queue
+) {
     const startNode = ways[wayId][startIdx];
 
     let alreadyCloser;
@@ -184,7 +204,14 @@ function walkThisWay(wayId, startIdx, initialDist, initialTime, originId) {
         wayNode.originId = originId;
 
         wayNode.ints.forEach(int => {
-            walkThisWay(int.wayId, int.wayNodeIdx, dist, time, originId);
+            queue.push([
+                int.wayId,
+                int.wayNodeIdx,
+                dist,
+                time,
+                originId,
+                queue
+            ]);
         });
 
         lastWayNode = wayNode;
@@ -214,7 +241,14 @@ function walkThisWay(wayId, startIdx, initialDist, initialTime, originId) {
         wayNode.originId = originId;
 
         wayNode.ints.forEach(int => {
-            walkThisWay(int.wayId, int.wayNodeIdx, dist, time, originId);
+            queue.push([
+                int.wayId,
+                int.wayNodeIdx,
+                dist,
+                time,
+                originId,
+                queue
+            ]);
         });
 
         lastWayNode = wayNode;
