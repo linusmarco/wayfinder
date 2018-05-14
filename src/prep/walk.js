@@ -1,6 +1,8 @@
 const fs = require('fs');
 const d3 = require('d3');
 
+const config = require('../config.json');
+
 const width = 960;
 const height = 700;
 
@@ -18,42 +20,41 @@ const innerHeight = height - margin.top - margin.bottom;
 
 const ways = require('../data/final.json');
 
-let mercatorProj = d3
-    .geoMercator()
-    .scale(250000)
-    .rotate([71.1434437, 0])
-    .center([0, 42.4892843])
-    .translate([innerWidth / 2, innerHeight / 2]);
+const rawNodes = require('../data/nodes.json');
 
-let nodeDist = function(nodeFrom, nodeTo) {
-    return (
-        d3.geoDistance([nodeFrom.lon, nodeFrom.lat], [nodeTo.lon, nodeTo.lat]) *
-        3959
-    );
+const geoJSON = {
+    type: 'FeatureCollection',
+    features: rawNodes.map(n => {
+        config.origins.forEach(o => {
+            const dist = nodeDist(o, n);
+            if (o.dist === undefined || dist < o.dist) {
+                o.dist = dist;
+                o.way = n.wayId;
+                o.node = n.nodeId;
+            }
+        });
+
+        return {
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: [n.lon, n.lat]
+            }
+        };
+    })
 };
 
-const origins = [
-    {
-        way: 9589326,
-        node: 74309086
-    },
-    {
-        way: 9589254,
-        node: 74351803
-    },
-    {
-        way: 74585100,
-        node: 542893399
-    }
-];
+let mercatorProj = d3
+    .geoMercator()
+    .rotate([71.1434437, 0])
+    .center([0, 42.4892843])
+    .fitSize([innerWidth, innerHeight], geoJSON);
 
-const by = 'time';
-
-origins.forEach(s => {
-    s.wayNodeIdx = ways[s.way].findIndex(n => n.nodeId === s.node);
+config.origins.forEach(o => {
+    o.wayNodeIdx = ways[o.way].findIndex(n => n.nodeId === o.node);
 });
 
-origins.forEach((o, i) => {
+config.origins.forEach((o, i) => {
     walkThisWay(o.way, o.wayNodeIdx, 0, 0, i);
     console.log(`walked ${i}`);
 });
@@ -74,53 +75,70 @@ let maxDist, maxTime;
 
 let timeIdxScale, colorScale;
 
-if (by === 'dist') {
+if (config.colorBy === 'dist') {
     maxDist = d3.max(nodes, n => n.dist);
 
     timeIdxScale = d3
         .scaleQuantize()
         .domain([0, maxDist])
-        .range(Array.apply(null, { length: 300 }).map(Number.call, Number));
+        .range(
+            Array.apply(null, { length: config.numTicks }).map(
+                Number.call,
+                Number
+            )
+        );
 
     colorScale = d3
         .scaleLinear()
         .domain([0, maxDist])
         .range([50, 100]);
-} else if (by === 'time') {
+} else if (config.colorBy === 'time') {
     maxTime = d3.max(nodes, n => n.time);
 
     timeIdxScale = d3
         .scaleQuantize()
         .domain([0, maxTime])
-        .range(Array.apply(null, { length: 300 }).map(Number.call, Number));
+        .range(
+            Array.apply(null, { length: config.numTicks }).map(
+                Number.call,
+                Number
+            )
+        );
 
     colorScale = d3
         .scaleLinear()
         .domain([0, maxTime])
         .range([50, 100]);
 } else {
-    console.error(`invalid 'by': ${by}`);
+    console.error(`invalid 'by': ${config.colorBy}`);
 }
 
 nodes.forEach(n => {
-    n.timeIdx = timeIdxScale(by === 'dist' ? n.dist : n.time);
+    n.timeIdx = timeIdxScale(config.colorBy === 'dist' ? n.dist : n.time);
     n.color = `hsl(${colors(n.originId)}, 100%, ${colorScale(
-        by === 'dist' ? n.dist : n.time
+        config.colorBy === 'dist' ? n.dist : n.time
     )}%)`;
 });
 
 nodes.sort((a, b) => {
-    if (by === 'dist') return d3.ascending(a.dist, b.dist);
+    if (config.colorBy === 'dist') return d3.ascending(a.dist, b.dist);
     else return d3.ascending(a.time, b.time);
 });
 
-fs.writeFileSync('../data/walked.json', JSON.stringify(nodes));
+fs.writeFileSync('../data/walked.json', JSON.stringify(nodes, null, 4));
+
+function nodeDist(nodeFrom, nodeTo) {
+    return (
+        d3.geoDistance([nodeFrom.lon, nodeFrom.lat], [nodeTo.lon, nodeTo.lat]) *
+        3959
+    );
+}
 
 function walkThisWay(wayId, startIdx, initialDist, initialTime, originId) {
     const startNode = ways[wayId][startIdx];
 
     let alreadyCloser;
-    if (by === 'dist') {
+    if (config.colorBy === 'dist') {
         alreadyCloser = (startNode.dist || Infinity) < initialDist;
     } else {
         alreadyCloser = (startNode.time || Infinity) < initialTime;
@@ -145,7 +163,7 @@ function walkThisWay(wayId, startIdx, initialDist, initialTime, originId) {
         const time = lastWayNode.time + thisDist / wayNode.maxspeed;
 
         let alreadyCloser;
-        if (by === 'dist') {
+        if (config.colorBy === 'dist') {
             alreadyCloser = (wayNode.dist || Infinity) < dist;
         } else {
             alreadyCloser = (wayNode.time || Infinity) < time;
@@ -175,7 +193,7 @@ function walkThisWay(wayId, startIdx, initialDist, initialTime, originId) {
         const time = lastWayNode.time + thisDist / wayNode.maxspeed;
 
         let alreadyCloser;
-        if (by === 'dist') {
+        if (config.colorBy === 'dist') {
             alreadyCloser = (wayNode.dist || Infinity) < dist;
         } else {
             alreadyCloser = (wayNode.time || Infinity) < time;

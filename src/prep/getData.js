@@ -3,9 +3,11 @@ const path = require('path');
 
 var request = require('request');
 
+const config = require('../config.json');
+
 const query = fs
     .readFileSync('wayNodes.overpassql', 'utf8')
-    .replace('##AREAID##', '3601931999');
+    .replace('##AREAID##', String(3600000000 + config.mapAreaId));
 
 const options = {
     method: 'POST',

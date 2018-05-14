@@ -11,6 +11,8 @@ const defaultSpeeds = {
     secondary: '30 mph',
     tertiary_link: '30 mph',
     tertiary: '30 mph',
+    trunk: '55 mph',
+    trunk_link: '30 mph',
     unclassified: '25 mph'
 };
 
