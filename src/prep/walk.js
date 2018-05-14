@@ -18,6 +18,8 @@ const margin = {
 const innerWidth = width - margin.left - margin.right;
 const innerHeight = height - margin.top - margin.bottom;
 
+const colors = d3.scaleOrdinal([240, 0, 30, 280, 320]);
+
 const ways = require('../data/final.json');
 
 const rawNodes = require('../data/nodes.json');
@@ -35,26 +37,26 @@ const geoJSON = {
     })
 };
 
-Object.keys(ways).forEach(w => {
-    ways[w].forEach(n => {
-        config.origins.forEach(o => {
-            const dist = nodeDist(o, n);
-            if (o.dist === undefined || dist < o.dist) {
-                o.dist = dist;
-                o.way = w;
-                o.node = n.nodeId;
-            }
-        });
-    });
-});
-
-console.log(config.origins);
-
 let mercatorProj = d3
     .geoMercator()
     .rotate([71.1434437, 0])
     .center([0, 42.4892843])
     .fitSize([innerWidth, innerHeight], geoJSON);
+
+Object.keys(ways).forEach(w => {
+    ways[w].forEach(n => {
+        config.origins.forEach((o, i) => {
+            const dist = nodeDist(o, n);
+            if (o.dist === undefined || dist < o.dist) {
+                o.dist = dist;
+                o.way = w;
+                o.node = n.nodeId;
+                o.loc = mercatorProj([n.lon, n.lat]);
+                o.color = `hsl(${colors(i)}, 100%, 50%)`;
+            }
+        });
+    });
+});
 
 config.origins.forEach(o => {
     o.wayNodeIdx = ways[o.way].findIndex(n => n.nodeId === o.node);
@@ -86,8 +88,6 @@ Object.keys(ways).forEach(w => {
         if (n.pLon) nodes.push(n);
     });
 });
-
-const colors = d3.scaleOrdinal([240, 0, 30, 280, 320]);
 
 let maxDist, maxTime;
 
@@ -143,7 +143,17 @@ nodes.sort((a, b) => {
     else return d3.ascending(a.time, b.time);
 });
 
-fs.writeFileSync('../data/walked.json', JSON.stringify(nodes, null, 4));
+fs.writeFileSync(
+    '../data/walked.json',
+    JSON.stringify(
+        {
+            origins: config.origins,
+            nodes: nodes
+        },
+        null,
+        4
+    )
+);
 
 function nodeDist(nodeFrom, nodeTo) {
     return (

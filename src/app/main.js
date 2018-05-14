@@ -22,7 +22,9 @@ function buildMap(containerId) {
     load().then(animate);
 
     async function load() {
-        const nodes = await d3.json('../data/walked.json');
+        const data = await d3.json('../data/walked.json');
+        const nodes = data.nodes;
+        const origins = data.origins;
 
         const maxTimeIdx = nodes[nodes.length - 1].timeIdx;
 
@@ -39,15 +41,19 @@ function buildMap(containerId) {
 
         this.nodeGroups = nodeGroups;
         this.nodes = nodes;
+        this.origins = origins;
         this.maxTimeIdx = maxTimeIdx;
     }
 
     function animate() {
+        drawOrigins(this.origins);
+
         let curTimeIdx = 0;
         const show = setInterval(() => {
             console.log(curTimeIdx);
 
             draw(this.nodeGroups[curTimeIdx]);
+            drawOrigins(this.origins);
             curTimeIdx++;
 
             if (curTimeIdx === maxTimeIdx + 1) {
@@ -61,6 +67,25 @@ function buildMap(containerId) {
                 );
             }
         }, 50);
+    }
+
+    function drawOrigins(origins) {
+        origins.forEach(o => {
+            context.beginPath();
+            context.arc(
+                o.loc[0],
+                o.loc[1],
+                lineWidth * 4,
+                0,
+                2 * Math.PI,
+                false
+            );
+            context.fillStyle = o.color;
+            context.fill();
+            context.lineWidth = 1;
+            context.strokeStyle = 'black';
+            context.stroke();
+        });
     }
 
     function draw(nodes) {
@@ -81,6 +106,7 @@ function buildMap(containerId) {
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
         draw(this.nodes);
+        drawOrigins(this.origins);
         context.restore();
     }
 }
