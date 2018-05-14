@@ -2,8 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 const defaultSpeeds = {
+    living_street: '15 mph',
     motorway_link: '30 mph',
     motorway: '60 mph',
+    platform: '15 mph',
     primary_link: '30 mph',
     primary: '60 mph',
     residential: '25 mph',
