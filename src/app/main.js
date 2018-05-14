@@ -24,33 +24,33 @@ function buildMap(containerId) {
     async function load() {
         const nodes = await d3.json('../data/walked.json');
 
-        const maxTime = nodes[nodes.length - 1].time;
+        const maxTimeIdx = nodes[nodes.length - 1].timeIdx;
 
-        const allTimes = Array.apply(null, { length: maxTime + 1 }).map(
+        const allTimeIdxs = Array.apply(null, { length: maxTimeIdx + 1 }).map(
             Number.call,
             Number
         );
         const nodeGroups = {};
-        allTimes.forEach(t => (nodeGroups[t] = []));
+        allTimeIdxs.forEach(t => (nodeGroups[t] = []));
 
         nodes.forEach(n => {
-            nodeGroups[n.time].push(n);
+            nodeGroups[n.timeIdx].push(n);
         });
 
         this.nodeGroups = nodeGroups;
         this.nodes = nodes;
-        this.maxTime = maxTime;
+        this.maxTimeIdx = maxTimeIdx;
     }
 
     function animate() {
-        let curTime = 0;
+        let curTimeIdx = 0;
         const show = setInterval(() => {
-            console.log(curTime);
+            console.log(curTimeIdx);
 
-            draw(this.nodeGroups[curTime]);
-            curTime++;
+            draw(this.nodeGroups[curTimeIdx]);
+            curTimeIdx++;
 
-            if (curTime === maxTime + 1) {
+            if (curTimeIdx === maxTimeIdx + 1) {
                 clearInterval(show);
 
                 canvas.call(
@@ -60,7 +60,7 @@ function buildMap(containerId) {
                         .on('zoom', zoomed.bind(this))
                 );
             }
-        }, 10);
+        }, 50);
     }
 
     function draw(nodes) {

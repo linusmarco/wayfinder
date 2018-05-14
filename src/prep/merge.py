@@ -14,6 +14,9 @@ def main():
     nodes['wayNodeIdx'] = nodes['wayNodeIdx'].astype(int)
     nodes['lat'] = nodes['lat'].astype(float)
     nodes['lon'] = nodes['lon'].astype(float)
+    nodes['maxspeed'] = nodes['maxspeed'].astype(int)
+
+    print(nodes.fillna('NULL').groupby(["highway", "maxspeed"]).size())
 
     # sort and create overall node index
     nodes.sort_values(by=['wayId', 'wayNodeIdx'])
@@ -37,7 +40,9 @@ def main():
     nodes['ints'] = nodes['nodeIdx'].map(lambda x: ids.get(x, []))
 
     # convert nodes df for output
-    nodes = nodes[['wayId', 'nodeId', 'wayNodeIdx', 'lat', 'lon', 'ints']]
+    nodes = nodes[[
+        'wayId', 'nodeId', 'wayNodeIdx', 'lat', 'lon', 'maxspeed', 'ints'
+    ]]
     drops = ['wayId', 'wayNodeIdx']
     way_to_obj = lambda x: x.drop(drops, axis=1).to_dict(orient='records')
     obj = nodes.groupby('wayId').apply(way_to_obj).to_dict()

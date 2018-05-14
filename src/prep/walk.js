@@ -28,7 +28,7 @@ let mercatorProj = d3
 let nodeDist = function(nodeFrom, nodeTo) {
     return (
         d3.geoDistance([nodeFrom.lon, nodeFrom.lat], [nodeTo.lon, nodeTo.lat]) *
-        1000000
+        3959
     );
 };
 
@@ -47,12 +47,14 @@ const origins = [
     }
 ];
 
+const by = 'time';
+
 origins.forEach(s => {
     s.wayNodeIdx = ways[s.way].findIndex(n => n.nodeId === s.node);
 });
 
 origins.forEach((o, i) => {
-    walkThisWay(o.way, o.wayNodeIdx, 0, i);
+    walkThisWay(o.way, o.wayNodeIdx, 0, 0, i);
     console.log(`walked ${i}`);
 });
 
@@ -66,36 +68,69 @@ Object.keys(ways).forEach(w => {
     });
 });
 
-const maxDist = d3.max(nodes, n => n.dist);
-
-const timeScale = d3
-    .scaleQuantize()
-    .domain([0, maxDist])
-    .range(Array.apply(null, { length: 300 }).map(Number.call, Number));
-
 const colors = d3.scaleOrdinal([240, 0, 30, 280, 320]);
 
-const colorScale = d3
-    .scaleLinear()
-    .domain([0, maxDist])
-    .range([50, 100]);
+let maxDist, maxTime;
+
+let timeIdxScale, colorScale;
+
+if (by === 'dist') {
+    maxDist = d3.max(nodes, n => n.dist);
+
+    timeIdxScale = d3
+        .scaleQuantize()
+        .domain([0, maxDist])
+        .range(Array.apply(null, { length: 300 }).map(Number.call, Number));
+
+    colorScale = d3
+        .scaleLinear()
+        .domain([0, maxDist])
+        .range([50, 100]);
+} else if (by === 'time') {
+    maxTime = d3.max(nodes, n => n.time);
+
+    timeIdxScale = d3
+        .scaleQuantize()
+        .domain([0, maxTime])
+        .range(Array.apply(null, { length: 300 }).map(Number.call, Number));
+
+    colorScale = d3
+        .scaleLinear()
+        .domain([0, maxTime])
+        .range([50, 100]);
+} else {
+    console.error(`invalid 'by': ${by}`);
+}
 
 nodes.forEach(n => {
-    n.time = timeScale(n.dist);
-    n.color = `hsl(${colors(n.originId)}, 100%, ${colorScale(n.dist)}%)`;
+    n.timeIdx = timeIdxScale(by === 'dist' ? n.dist : n.time);
+    n.color = `hsl(${colors(n.originId)}, 100%, ${colorScale(
+        by === 'dist' ? n.dist : n.time
+    )}%)`;
 });
 
-nodes.sort((a, b) => d3.ascending(a.dist, b.dist));
+nodes.sort((a, b) => {
+    if (by === 'dist') return d3.ascending(a.dist, b.dist);
+    else return d3.ascending(a.time, b.time);
+});
 
 fs.writeFileSync('../data/walked.json', JSON.stringify(nodes));
 
-function walkThisWay(wayId, startIdx, initialDist, originId) {
+function walkThisWay(wayId, startIdx, initialDist, initialTime, originId) {
     const startNode = ways[wayId][startIdx];
 
-    if ((startNode.dist || Infinity) < initialDist) {
+    let alreadyCloser;
+    if (by === 'dist') {
+        alreadyCloser = (startNode.dist || Infinity) < initialDist;
+    } else {
+        alreadyCloser = (startNode.time || Infinity) < initialTime;
+    }
+
+    if (alreadyCloser) {
         return;
     }
     startNode.dist = initialDist;
+    startNode.time = initialTime;
     startNode.originId = originId;
 
     let nextUp = startIdx + 1;
@@ -105,18 +140,28 @@ function walkThisWay(wayId, startIdx, initialDist, originId) {
 
     lastWayNode = startNode;
     while ((wayNode = ways[wayId][nextUp])) {
-        const dist = lastWayNode.dist + nodeDist(lastWayNode, wayNode);
+        const thisDist = nodeDist(lastWayNode, wayNode);
+        const dist = lastWayNode.dist + thisDist;
+        const time = lastWayNode.time + thisDist / wayNode.maxspeed;
 
-        if ((wayNode.dist || Infinity) < dist) {
+        let alreadyCloser;
+        if (by === 'dist') {
+            alreadyCloser = (wayNode.dist || Infinity) < dist;
+        } else {
+            alreadyCloser = (wayNode.time || Infinity) < time;
+        }
+
+        if (alreadyCloser) {
             break;
         }
         wayNode.dist = dist;
+        wayNode.time = time;
         wayNode.pLon = lastWayNode.lon;
         wayNode.pLat = lastWayNode.lat;
         wayNode.originId = originId;
 
         wayNode.ints.forEach(int => {
-            walkThisWay(int.wayId, int.wayNodeIdx, dist, originId);
+            walkThisWay(int.wayId, int.wayNodeIdx, dist, time, originId);
         });
 
         lastWayNode = wayNode;
@@ -125,18 +170,28 @@ function walkThisWay(wayId, startIdx, initialDist, originId) {
 
     lastWayNode = startNode;
     while ((wayNode = ways[wayId][nextDown])) {
-        const dist = lastWayNode.dist + nodeDist(lastWayNode, wayNode);
+        const thisDist = nodeDist(lastWayNode, wayNode);
+        const dist = lastWayNode.dist + thisDist;
+        const time = lastWayNode.time + thisDist / wayNode.maxspeed;
 
-        if ((wayNode.dist || Infinity) < dist) {
+        let alreadyCloser;
+        if (by === 'dist') {
+            alreadyCloser = (wayNode.dist || Infinity) < dist;
+        } else {
+            alreadyCloser = (wayNode.time || Infinity) < time;
+        }
+
+        if (alreadyCloser) {
             break;
         }
         wayNode.dist = dist;
+        wayNode.time = time;
         wayNode.pLon = lastWayNode.lon;
         wayNode.pLat = lastWayNode.lat;
         wayNode.originId = originId;
 
         wayNode.ints.forEach(int => {
-            walkThisWay(int.wayId, int.wayNodeIdx, dist, originId);
+            walkThisWay(int.wayId, int.wayNodeIdx, dist, time, originId);
         });
 
         lastWayNode = wayNode;

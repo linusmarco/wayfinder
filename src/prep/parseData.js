@@ -1,6 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 
+const defaultSpeeds = {
+    motorway_link: '30 mph',
+    motorway: '60 mph',
+    primary_link: '30 mph',
+    primary: '60 mph',
+    residential: '25 mph',
+    secondary_link: '30 mph',
+    secondary: '30 mph',
+    tertiary_link: '30 mph',
+    tertiary: '30 mph',
+    unclassified: '25 mph'
+};
+
 const rawData = JSON.parse(fs.readFileSync('../data/raw.json', 'utf8'));
 
 let ways = [];
@@ -29,7 +42,13 @@ rawData.elements.forEach((d, i) => {
                     nodeId: n.id,
                     wayNodeIdx: j,
                     lat: n.lat,
-                    lon: n.lon
+                    lon: n.lon,
+                    maxspeed: parseSpeed(
+                        n.maxspeed ||
+                            lastWay.tags.maxspeed ||
+                            defaultSpeeds[lastWay.tags.highway]
+                    ),
+                    highway: lastWay.tags.highway
                 });
             });
         }
@@ -52,3 +71,19 @@ console.log(`
 ways: ${ways.length}
 nodes: ${nodes.length}
 `);
+
+function parseSpeed(rawSpd) {
+    let parsed;
+
+    try {
+        parsed = Number(rawSpd.replace('mph', ''));
+    } catch (e) {
+        console.error(`could not parse speed: ${rawSpd}`);
+    }
+
+    if (isNaN(parsed)) {
+        console.error(`could not parse speed: ${rawSpd}`);
+    } else {
+        return parsed;
+    }
+}
