@@ -11,71 +11,78 @@ function buildMap(containerId) {
         left: 0
     };
 
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
-
-    let svg = d3
+    const canvas = d3
         .select(containerId)
-        .append('svg')
+        .append('canvas')
         .attr('height', height)
         .attr('width', width);
 
-    let g = svg
-        .append('g')
-        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+    const context = canvas.node().getContext('2d');
 
-    let zoom = d3
-        .zoom()
-        .scaleExtent([1, 8])
-        .on('zoom', zoomed);
+    load().then(animate);
 
-    svg.call(
-        d3
-            .zoom()
-            .scaleExtent([1 / 2, 8])
-            .on('zoom', zoomed)
-    );
-
-    function zoomed() {
-        g
-            .selectAll('.node')
-            .attr('transform', d3.event.transform)
-            .attr('stroke-width', lineWidth / d3.event.transform.k);
-    }
-
-    async function draw() {
+    async function load() {
         const nodes = await d3.json('../data/walked.json');
 
-        const lines = g
-            .selectAll('.node')
-            .data(nodes)
-            .enter()
-            .append('line')
-            .attr('class', n => `node node-${n.time}`)
-            .attr('x1', n => n.pLoc[0])
-            .attr('y1', n => n.pLoc[1])
-            .attr('x2', n => n.loc[0])
-            .attr('y2', n => n.loc[1])
-            .attr('stroke', n => n.color)
-            .attr('stroke-width', lineWidth)
-            .attr('opacity', 0);
+        const maxTime = nodes[nodes.length - 1].time;
 
+        const allTimes = Array.apply(null, { length: maxTime + 1 }).map(
+            Number.call,
+            Number
+        );
+        const nodeGroups = {};
+        allTimes.forEach(t => (nodeGroups[t] = []));
+
+        nodes.forEach(n => {
+            nodeGroups[n.time].push(n);
+        });
+
+        this.nodeGroups = nodeGroups;
+        this.nodes = nodes;
+        this.maxTime = maxTime;
+    }
+
+    function animate() {
         let curTime = 0;
         const show = setInterval(() => {
             console.log(curTime);
 
-            showNodes(curTime);
+            draw(this.nodeGroups[curTime]);
             curTime++;
 
-            if (curTime === 300) clearInterval(show);
-        }, 50);
+            if (curTime === maxTime + 1) {
+                clearInterval(show);
 
-        function showNodes(time) {
-            lines.filter(`.node-${time}`).attr('opacity', 1);
-        }
+                canvas.call(
+                    d3
+                        .zoom()
+                        .scaleExtent([1 / 2, 8])
+                        .on('zoom', zoomed.bind(this))
+                );
+            }
+        }, 10);
     }
 
-    draw();
+    function draw(nodes) {
+        nodes.forEach(n => {
+            context.beginPath();
+            context.moveTo(n.pLoc[0], n.pLoc[1]);
+            context.lineTo(n.loc[0], n.loc[1]);
+            context.strokeStyle = n.color;
+            context.lineWidth = lineWidth;
+            context.stroke();
+        });
+    }
+
+    function zoomed() {
+        const transform = d3.event.transform;
+        context.save();
+        context.clearRect(0, 0, width, height);
+        context.translate(transform.x, transform.y);
+        context.scale(transform.k, transform.k);
+        draw(this.nodes);
+        context.restore();
+    }
 }
 
 buildMap('#viz');
