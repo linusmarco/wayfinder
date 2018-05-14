@@ -24,6 +24,8 @@ function buildMap(containerId) {
         .append('g')
         .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
+    let colors = d3.scaleOrdinal([240, 0, 30, 280, 320]);
+
     let zoom = d3
         .zoom()
         .scaleExtent([1, 8])
@@ -62,19 +64,31 @@ function buildMap(containerId) {
             );
         };
 
-        const start = {
-            way: 9589326,
-            node: 74309086
-        };
+        const origins = [
+            {
+                way: 9589326,
+                node: 74309086
+            },
+            {
+                way: 9589254,
+                node: 74351803
+            },
+            {
+                way: 74585100,
+                node: 542893399
+            }
+        ];
 
-        start.wayNodeIdx = ways[start.way].findIndex(
-            n => n.nodeId === start.node
-        );
+        origins.forEach(s => {
+            s.wayNodeIdx = ways[s.way].findIndex(n => n.nodeId === s.node);
+        });
 
-        console.log(start);
+        console.log(origins);
 
-        walkThisWay(start.way, start.wayNodeIdx, 0);
-        console.log('walked');
+        origins.forEach((o, i) => {
+            walkThisWay(o.way, o.wayNodeIdx, 0, i);
+            console.log(`walked ${i}`);
+        });
 
         let nodes = [];
         Object.keys(ways).forEach(w => {
@@ -87,8 +101,6 @@ function buildMap(containerId) {
         });
 
         const maxDist = d3.max(nodes, n => n.dist);
-
-        console.log(nodes);
 
         const timeScale = d3
             .scaleQuantize()
@@ -110,7 +122,10 @@ function buildMap(containerId) {
             .attr('y1', n => n.pLoc[1])
             .attr('x2', n => n.loc[0])
             .attr('y2', n => n.loc[1])
-            .attr('stroke', n => `hsl(240, 100%, ${colorScale(n.dist)}%)`)
+            .attr(
+                'stroke',
+                n => `hsl(${colors(n.originId)}, 100%, ${colorScale(n.dist)}%)`
+            )
             .attr('stroke-width', lineWidth)
             .attr('opacity', 0);
 
@@ -122,19 +137,20 @@ function buildMap(containerId) {
             curTime++;
 
             if (curTime === 300) clearInterval(show);
-        }, 100);
+        }, 50);
 
         function showNodes(time) {
             lines.filter(`.node-${time}`).attr('opacity', 1);
         }
 
-        function walkThisWay(wayId, startIdx, initialDist) {
+        function walkThisWay(wayId, startIdx, initialDist, originId) {
             const startNode = ways[wayId][startIdx];
 
             if ((startNode.dist || Infinity) < initialDist) {
                 return;
             }
             startNode.dist = initialDist;
+            startNode.originId = originId;
 
             let nextUp = startIdx + 1;
             let nextDown = startIdx - 1;
@@ -151,9 +167,10 @@ function buildMap(containerId) {
                 wayNode.dist = dist;
                 wayNode.pLon = lastWayNode.lon;
                 wayNode.pLat = lastWayNode.lat;
+                wayNode.originId = originId;
 
                 wayNode.ints.forEach(int => {
-                    walkThisWay(int.wayId, int.wayNodeIdx, dist);
+                    walkThisWay(int.wayId, int.wayNodeIdx, dist, originId);
                 });
 
                 lastWayNode = wayNode;
@@ -170,9 +187,10 @@ function buildMap(containerId) {
                 wayNode.dist = dist;
                 wayNode.pLon = lastWayNode.lon;
                 wayNode.pLat = lastWayNode.lat;
+                wayNode.originId = originId;
 
                 wayNode.ints.forEach(int => {
-                    walkThisWay(int.wayId, int.wayNodeIdx, dist);
+                    walkThisWay(int.wayId, int.wayNodeIdx, dist, originId);
                 });
 
                 lastWayNode = wayNode;
