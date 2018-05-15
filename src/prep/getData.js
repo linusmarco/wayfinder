@@ -10,7 +10,7 @@ let query = fs.readFileSync('wayNodes.overpassql', 'utf8');
 if (config.mapArea.id) {
     query = query.replace(
         '##AREA##',
-        `area:${String(3600000000 + config.mapAreaId)}`
+        `area:${String(3600000000 + config.mapArea.id)}`
     );
 } else if (
     !isNaN(config.mapArea.s) &&
