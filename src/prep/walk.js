@@ -72,9 +72,11 @@ config.origins.forEach((o, i) => {
     });
 });
 
+let walksDone = 0;
 while (walks.length > 0) {
-    console.log(`walk stack: ${walks.length}`);
     walkThisWay(...walks[0]);
+    walksDone++;
+    console.log(`walks remaining: ${walks.length}   (${walksDone} completed)`);
     walks.shift();
 }
 console.log('walked!');
