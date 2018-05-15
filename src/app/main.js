@@ -18,8 +18,8 @@ function buildMap(containerId) {
         .attr('width', width);
 
     const context = canvas.node().getContext('2d');
-    context.strokeStyle = 'black';
-    context.strokeRect(0, 0, width, height);
+
+    drawBBox();
 
     load().then(animate);
 
@@ -55,6 +55,7 @@ function buildMap(containerId) {
             console.log(curTimeIdx);
 
             draw(this.nodeGroups[curTimeIdx]);
+            drawBBox();
             drawOrigins(this.origins);
             curTimeIdx++;
 
@@ -90,6 +91,11 @@ function buildMap(containerId) {
         });
     }
 
+    function drawBBox() {
+        context.strokeStyle = 'black';
+        context.strokeRect(0, 0, width, height);
+    }
+
     function draw(nodes) {
         nodes.forEach(n => {
             context.beginPath();
@@ -97,6 +103,7 @@ function buildMap(containerId) {
             context.lineTo(n.loc[0], n.loc[1]);
             context.strokeStyle = n.color;
             context.lineWidth = lineWidth;
+            context.lineCap = 'round';
             context.stroke();
         });
     }
@@ -107,11 +114,10 @@ function buildMap(containerId) {
         context.clearRect(0, 0, width, height);
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
-        context.strokeStyle = 'black';
-        context.strokeRect(0, 0, width, height);
         draw(this.nodes);
         drawOrigins(this.origins);
         context.restore();
+        drawBBox();
     }
 }
 

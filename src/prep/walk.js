@@ -50,7 +50,9 @@ Object.keys(ways).forEach(w => {
                 o.way = w;
                 o.node = n.nodeId;
                 o.loc = mercatorProj([n.lon, n.lat]);
-                o.color = `rgba(${o.rgb[0]}, ${o.rgb[1]}, ${o.rgb[2]}, 1)`;
+                o.color = d3
+                    .hsl(`rgb(${o.rgb[0]}, ${o.rgb[1]}, ${o.rgb[2]})`)
+                    .toString();
             }
         });
     });
@@ -89,7 +91,7 @@ Object.keys(ways).forEach(w => {
 
 let maxDist, maxTime;
 
-let timeIdxScale, colorScale;
+let timeIdxScale, fadeScale;
 
 if (config.colorBy === 'dist') {
     maxDist = d3.max(nodes, n => n.dist);
@@ -104,10 +106,10 @@ if (config.colorBy === 'dist') {
             )
         );
 
-    colorScale = d3
+    fadeScale = d3
         .scaleLinear()
         .domain([0, maxDist])
-        .range([1, 0]);
+        .range([0, 1]);
 } else if (config.colorBy === 'time') {
     maxTime = d3.max(nodes, n => n.time);
 
@@ -121,21 +123,23 @@ if (config.colorBy === 'dist') {
             )
         );
 
-    colorScale = d3
+    fadeScale = d3
         .scaleLinear()
         .domain([0, maxTime])
-        .range([1, 0]);
+        .range([0, 1]);
 } else {
     console.error(`invalid 'by': ${config.colorBy}`);
 }
 
 nodes.forEach(n => {
+    const origin = config.origins[n.originId];
+
     n.timeIdx = timeIdxScale(config.colorBy === 'dist' ? n.dist : n.time);
-    n.color = `rgba(${config.origins[n.originId].rgb[0]}, ${
-        config.origins[n.originId].rgb[1]
-    }, ${config.origins[n.originId].rgb[2]}, ${colorScale(
-        config.colorBy === 'dist' ? n.dist : n.time
-    )})`;
+
+    const color = d3.hsl(origin.color);
+    const fadedAmt = fadeScale(config.colorBy === 'dist' ? n.dist : n.time);
+    color.l = color.l + (1 - color.l) * fadedAmt;
+    n.color = color.toString();
 });
 
 nodes.sort((a, b) => {
