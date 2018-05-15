@@ -18,8 +18,6 @@ const margin = {
 const innerWidth = width - margin.left - margin.right;
 const innerHeight = height - margin.top - margin.bottom;
 
-const colors = d3.scaleOrdinal([240, 0, 30, 280, 320]);
-
 const ways = require('../data/final.json');
 
 const rawNodes = require('../data/nodes.json');
@@ -52,7 +50,7 @@ Object.keys(ways).forEach(w => {
                 o.way = w;
                 o.node = n.nodeId;
                 o.loc = mercatorProj([n.lon, n.lat]);
-                o.color = `hsl(${colors(i)}, 100%, 50%)`;
+                o.color = `hsl(${o.hue}, 100%, 50%)`;
             }
         });
     });
@@ -133,7 +131,7 @@ if (config.colorBy === 'dist') {
 
 nodes.forEach(n => {
     n.timeIdx = timeIdxScale(config.colorBy === 'dist' ? n.dist : n.time);
-    n.color = `hsl(${colors(n.originId)}, 100%, ${colorScale(
+    n.color = `hsl(${config.origins[n.originId].hue}, 100%, ${colorScale(
         config.colorBy === 'dist' ? n.dist : n.time
     )}%)`;
 });
