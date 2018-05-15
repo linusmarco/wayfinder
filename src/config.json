@@ -1,30 +1,60 @@
 {
     "mapArea": {
         "id": null,
-        "s": 38.72275,
-        "w": -75.39093,
-        "n": 38.84425,
-        "e": -75.24141
+        "s": 38.669596,
+        "w": -75.64466,
+        "n": 38.964287,
+        "e": -75.033203
     },
     "colorBy": "time",
     "origins": [
         {
-            "name": "Station 1",
+            "name": "Carlisle Fire Company",
             "rgb": [228, 26, 28],
-            "lat": 38.797706,
-            "lon": -75.341768
+            "lat": 38.91464,
+            "lon": -75.440027
         },
         {
-            "name": "Station 2",
+            "name": "Memorial Fire Company",
             "rgb": [55, 126, 184],
-            "lat": 38.756535,
-            "lon": -75.258254
+            "lat": 38.913613,
+            "lon": -75.305328
         },
         {
-            "name": "Station 3",
+            "name": "Milton Fire Company",
             "rgb": [77, 175, 74],
-            "lat": 38.732727,
-            "lon": -75.325839
+            "lat": 38.777506,
+            "lon": -75.309647
+        },
+        {
+            "name": "Georgetown Fire Company",
+            "rgb": [152, 78, 163],
+            "lat": 38.688868,
+            "lon": -75.384505
+        },
+        {
+            "name": "Bridgeville Fire Company",
+            "rgb": [255, 127, 0],
+            "lat": 38.742613,
+            "lon": -75.604329
+        },
+        {
+            "name": "Greenwood Fire Company",
+            "rgb": [166, 86, 40],
+            "lat": 38.804335,
+            "lon": -75.584825
+        },
+        {
+            "name": "Farmington Fire Company",
+            "rgb": [228, 26, 28],
+            "lat": 38.870354,
+            "lon": -75.575536
+        },
+        {
+            "name": "Houston Fire Company",
+            "rgb": [55, 126, 184],
+            "lat": 38.917784,
+            "lon": -75.505123
         }
     ],
     "numTicks": 300
