@@ -50,7 +50,7 @@ Object.keys(ways).forEach(w => {
                 o.way = w;
                 o.node = n.nodeId;
                 o.loc = mercatorProj([n.lon, n.lat]);
-                o.color = `hsl(${o.hue}, 100%, 50%)`;
+                o.color = `rgba(${o.rgb[0]}, ${o.rgb[1]}, ${o.rgb[2]}, 1)`;
             }
         });
     });
@@ -107,7 +107,7 @@ if (config.colorBy === 'dist') {
     colorScale = d3
         .scaleLinear()
         .domain([0, maxDist])
-        .range([50, 100]);
+        .range([1, 0]);
 } else if (config.colorBy === 'time') {
     maxTime = d3.max(nodes, n => n.time);
 
@@ -124,16 +124,18 @@ if (config.colorBy === 'dist') {
     colorScale = d3
         .scaleLinear()
         .domain([0, maxTime])
-        .range([50, 100]);
+        .range([1, 0]);
 } else {
     console.error(`invalid 'by': ${config.colorBy}`);
 }
 
 nodes.forEach(n => {
     n.timeIdx = timeIdxScale(config.colorBy === 'dist' ? n.dist : n.time);
-    n.color = `hsl(${config.origins[n.originId].hue}, 100%, ${colorScale(
+    n.color = `rgba(${config.origins[n.originId].rgb[0]}, ${
+        config.origins[n.originId].rgb[1]
+    }, ${config.origins[n.originId].rgb[2]}, ${colorScale(
         config.colorBy === 'dist' ? n.dist : n.time
-    )}%)`;
+    )})`;
 });
 
 nodes.sort((a, b) => {
