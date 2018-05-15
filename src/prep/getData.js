@@ -5,9 +5,29 @@ var request = require('request');
 
 const config = require('../config.json');
 
-const query = fs
-    .readFileSync('wayNodes.overpassql', 'utf8')
-    .replace('##AREAID##', String(3600000000 + config.mapAreaId));
+let query = fs.readFileSync('wayNodes.overpassql', 'utf8');
+
+if (config.mapArea.id) {
+    query = query.replace(
+        '##AREA##',
+        `area:${String(3600000000 + config.mapAreaId)}`
+    );
+} else if (
+    !isNaN(config.mapArea.s) &&
+    !isNaN(config.mapArea.w) &&
+    !isNaN(config.mapArea.n) &&
+    !isNaN(config.mapArea.e)
+) {
+    query = query.replace(
+        '##AREA##',
+        `${String(config.mapArea.s)},
+    ${String(config.mapArea.w)},
+    ${String(config.mapArea.n)},
+    ${String(config.mapArea.e)}`
+    );
+} else {
+    new Error('mapArea specified incorrectly in config.json');
+}
 
 const options = {
     method: 'POST',

@@ -18,6 +18,8 @@ const defaultSpeeds = {
     unclassified: '25 mph'
 };
 
+const config = require('../config.json');
+
 const rawData = JSON.parse(fs.readFileSync('../data/raw.json', 'utf8'));
 
 let ways = [];
@@ -39,6 +41,17 @@ rawData.elements.forEach((d, i) => {
                 else if (idxA < idxB) return -1;
                 else return 0;
             });
+
+            if (!config.mapArea.id) {
+                const inArea = lastWay.nodeDetails.map(n =>
+                    pointInBox(n, config.mapArea)
+                );
+
+                lastWay.nodeDetails = lastWay.nodeDetails.slice(
+                    inArea.indexOf(true),
+                    inArea.lastIndexOf(true) + 1
+                );
+            }
 
             lastWay.nodeDetails.forEach((n, j) => {
                 nodes.push({
@@ -90,4 +103,13 @@ function parseSpeed(rawSpd) {
     } else {
         return parsed;
     }
+}
+
+function pointInBox(point, bounds) {
+    if (!(point.lat >= bounds.s)) return false;
+    if (!(point.lat <= bounds.n)) return false;
+    if (!(point.lon >= bounds.w)) return false;
+    if (!(point.lon <= bounds.e)) return false;
+
+    return true;
 }

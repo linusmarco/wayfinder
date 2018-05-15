@@ -3,7 +3,7 @@
 way
   ["highway"]
   ["highway"!~"footway|cycleway|path|service|track|pedestrian|steps|proposed|corridor|construction"]
-  (area:##AREAID##)
+  (##AREA##)
   ->.relevant_ways;
 
 foreach.relevant_ways->.this_way{
