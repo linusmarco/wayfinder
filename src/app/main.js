@@ -18,6 +18,8 @@ function buildMap(containerId) {
         .attr('width', width);
 
     const context = canvas.node().getContext('2d');
+    context.fillStyle = '#bbb';
+    context.fillRect(0, 0, width, height);
 
     load().then(animate);
 
@@ -105,6 +107,8 @@ function buildMap(containerId) {
         context.clearRect(0, 0, width, height);
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
+        context.fillStyle = '#bbb';
+        context.fillRect(0, 0, width, height);
         draw(this.nodes);
         drawOrigins(this.origins);
         context.restore();
