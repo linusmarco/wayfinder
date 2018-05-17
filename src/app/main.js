@@ -19,6 +19,8 @@ function buildMap(containerId) {
 
     const context = canvas.node().getContext('2d');
 
+    this.scale = 1;
+
     drawBBox();
 
     load().then(animate);
@@ -78,14 +80,14 @@ function buildMap(containerId) {
             context.arc(
                 o.loc[0],
                 o.loc[1],
-                lineWidth * 4,
+                lineWidth * 4 / this.scale,
                 0,
                 2 * Math.PI,
                 false
             );
             context.fillStyle = o.color;
             context.fill();
-            context.lineWidth = 1;
+            context.lineWidth = 1 / this.scale;
             context.strokeStyle = 'black';
             context.stroke();
         });
@@ -102,7 +104,7 @@ function buildMap(containerId) {
             context.moveTo(n.pLoc[0], n.pLoc[1]);
             context.lineTo(n.loc[0], n.loc[1]);
             context.strokeStyle = n.color;
-            context.lineWidth = lineWidth;
+            context.lineWidth = lineWidth / this.scale;
             context.lineCap = 'round';
             context.stroke();
         });
@@ -110,10 +112,11 @@ function buildMap(containerId) {
 
     function zoomed() {
         const transform = d3.event.transform;
+        this.scale = transform.k;
         context.save();
         context.clearRect(0, 0, width, height);
         context.translate(transform.x, transform.y);
-        context.scale(transform.k, transform.k);
+        context.scale(this.scale, this.scale);
         draw(this.nodes);
         drawOrigins(this.origins);
         context.restore();
