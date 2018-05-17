@@ -9,6 +9,12 @@
     "colorBy": "time",
     "origins": [
         {
+            "name": "Ellendale Fire Company",
+            "rgb": [166, 86, 40],
+            "lat": 38.807206,
+            "lon": -75.421842
+        },
+        {
             "name": "Carlisle Fire Company",
             "rgb": [228, 26, 28],
             "lat": 38.91464,

@@ -16,7 +16,7 @@ def main():
     nodes['lon'] = nodes['lon'].astype(float)
     nodes['maxspeed'] = nodes['maxspeed'].astype(int)
 
-    print(nodes.fillna('NULL').groupby(["highway", "maxspeed"]).size())
+    # print(nodes.fillna('NULL').groupby(["highway", "maxspeed"]).size())
 
     # sort and create overall node index
     nodes.sort_values(by=['wayId', 'wayNodeIdx'])
@@ -31,6 +31,7 @@ def main():
     same_way_diff_node = ~diff_way & (m['wayNodeIdx_x'] != m['wayNodeIdx_y'])
     intersection = diff_way | same_way_diff_node
     m = m.loc[intersection]
+    print("{} intersections (with dupes)".format(len(m)))
 
     # get list of nodes that each node intersects
     ids = m.groupby('nodeIdx_x').apply(get_intersections)
