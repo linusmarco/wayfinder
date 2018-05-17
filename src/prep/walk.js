@@ -178,11 +178,15 @@ function walkThisWay(
 ) {
     const startNode = ways[wayId][startIdx];
 
-    let alreadyCloser;
+    let alreadyCloser, alreadyClosest;
     if (config.colorBy === 'dist') {
-        alreadyCloser = (startNode.dist || Infinity) < initialDist;
+        alreadyClosest = startNode.dist === 0;
+        alreadyCloser = (startNode.dist || Infinity) <= initialDist;
+        alreadyCloser = alreadyCloser || alreadyClosest;
     } else {
-        alreadyCloser = (startNode.time || Infinity) < initialTime;
+        alreadyClosest = startNode.time === 0;
+        alreadyCloser = (startNode.time || Infinity) <= initialTime;
+        alreadyCloser = alreadyCloser || alreadyClosest;
     }
 
     if (alreadyCloser) {
@@ -203,11 +207,15 @@ function walkThisWay(
         const dist = lastWayNode.dist + thisDist;
         const time = lastWayNode.time + thisDist / wayNode.maxspeed;
 
-        let alreadyCloser;
+        let alreadyCloser, alreadyClosest;
         if (config.colorBy === 'dist') {
-            alreadyCloser = (wayNode.dist || Infinity) < dist;
+            alreadyClosest = wayNode.dist === 0;
+            alreadyCloser = (wayNode.dist || Infinity) <= dist;
+            alreadyCloser = alreadyCloser || alreadyClosest;
         } else {
-            alreadyCloser = (wayNode.time || Infinity) < time;
+            alreadyClosest = wayNode.time === 0;
+            alreadyCloser = (wayNode.time || Infinity) <= time;
+            alreadyCloser = alreadyCloser || alreadyClosest;
         }
 
         if (alreadyCloser) {
@@ -240,11 +248,15 @@ function walkThisWay(
         const dist = lastWayNode.dist + thisDist;
         const time = lastWayNode.time + thisDist / wayNode.maxspeed;
 
-        let alreadyCloser;
+        let alreadyCloser, alreadyClosest;
         if (config.colorBy === 'dist') {
-            alreadyCloser = (wayNode.dist || Infinity) < dist;
+            alreadyClosest = wayNode.dist === 0;
+            alreadyCloser = (wayNode.dist || Infinity) <= dist;
+            alreadyCloser = alreadyCloser || alreadyClosest;
         } else {
-            alreadyCloser = (wayNode.time || Infinity) < time;
+            alreadyClosest = wayNode.time === 0;
+            alreadyCloser = (wayNode.time || Infinity) <= time;
+            alreadyCloser = alreadyCloser || alreadyClosest;
         }
 
         if (alreadyCloser) {
