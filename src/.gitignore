@@ -1,5 +1,6 @@
 # Custom
 data/
+config_*.json
 
 # Logs
 logs
