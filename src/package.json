@@ -18,6 +18,7 @@
     "homepage": "https://github.com/linusmarco/wayfinder#readme",
     "dependencies": {
         "query-overpass": "^1.5.3",
-        "d3": "^5.4.0"
+        "d3": "^5.4.0",
+        "lodash": "^4.17.10"
     }
 }
