@@ -1,0 +1,22 @@
+{
+    "name": "wayfinder-deployment",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/linusmarco/wayfinder.git"
+    },
+    "author": "Linus Marco",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/linusmarco/wayfinder/issues"
+    },
+    "homepage": "https://github.com/linusmarco/wayfinder#readme",
+    "dependencies": {
+        "serverless-finch": "^2.1.2"
+    }
+}

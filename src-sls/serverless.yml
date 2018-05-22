@@ -1,0 +1,71 @@
+service: wayfinder
+
+provider:
+  name: aws
+  profile: serverless-admin
+  runtime: nodejs8.10
+  stage: dev
+  region: us-east-1
+  # iamRoleStatements:
+  #   - Effect: Allow
+  #     Action:
+  #       - dynamodb:Query
+  #       - dynamodb:Scan
+  #       - dynamodb:GetItem
+  #       - dynamodb:PutItem
+  #       - dynamodb:UpdateItem
+  #       - dynamodb:DeleteItem
+  #     Resource:
+  #       - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }
+  # environment:
+  #     USERS_TABLE: ${self:custom.tableName}
+
+functions:
+  index:
+    handler: server/functions/index.handler
+    timeout: 120
+    events:
+      - http: 
+          path: walk
+          method: post
+          cors: true
+
+
+plugins:
+  - serverless-finch
+
+custom:
+  client:
+    bucketName: wayfinder-site
+    distributionFolder: client
+    indexDocument: index.html
+    errorDocument: index.html
+    routingRules:
+      - redirect: 
+          hostName: etb89pt1dc.execute-api.us-east-1.amazonaws.com
+          httpRedirectCode: 301
+          protocol: https
+          replaceKeyPrefixWith: dev/walk
+        condition:
+          keyPrefixEquals: api/walk
+
+# custom:
+#     tableName: 'users-table-${self:provider.stage}'
+
+# resources:
+#   Resources:
+#     UsersDynamoDBTable:
+#       Type: 'AWS::DynamoDB::Table'
+#       Properties:
+#         AttributeDefinitions:
+#           -
+#             AttributeName: userId
+#             AttributeType: S
+#         KeySchema:
+#           -
+#             AttributeName: userId
+#             KeyType: HASH
+#         ProvisionedThroughput:
+#           ReadCapacityUnits: 1
+#           WriteCapacityUnits: 1
+#         TableName: ${self:custom.tableName}
