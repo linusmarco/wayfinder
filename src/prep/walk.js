@@ -6,8 +6,6 @@ const config = require('../config.json');
 const width = 960;
 const height = 700;
 
-const lineWidth = 1.5;
-
 const margin = {
     top: 0,
     right: 0,
