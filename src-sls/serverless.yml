@@ -6,19 +6,6 @@ provider:
   runtime: nodejs8.10
   stage: dev
   region: us-east-1
-  # iamRoleStatements:
-  #   - Effect: Allow
-  #     Action:
-  #       - dynamodb:Query
-  #       - dynamodb:Scan
-  #       - dynamodb:GetItem
-  #       - dynamodb:PutItem
-  #       - dynamodb:UpdateItem
-  #       - dynamodb:DeleteItem
-  #     Resource:
-  #       - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }
-  # environment:
-  #     USERS_TABLE: ${self:custom.tableName}
 
 functions:
   index:
@@ -27,9 +14,8 @@ functions:
     events:
       - http: 
           path: walk
-          method: post
+          method: get
           cors: true
-
 
 plugins:
   - serverless-finch
@@ -42,10 +28,10 @@ custom:
     errorDocument: index.html
     routingRules:
       - redirect: 
-          hostName: etb89pt1dc.execute-api.us-east-1.amazonaws.com
+          hostName: "${file(./slsHelpers.js):getApiUrl}.execute-api.${self:provider.region}.amazonaws.com"
           httpRedirectCode: 301
           protocol: https
-          replaceKeyPrefixWith: dev/walk
+          replaceKeyPrefixWith: ${self:provider.stage}/walk
         condition:
           keyPrefixEquals: api/walk
 
