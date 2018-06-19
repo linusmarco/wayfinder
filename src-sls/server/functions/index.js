@@ -4,17 +4,6 @@ const merge = require('./lib/merge');
 const walk = require('./lib/walk');
 
 module.exports.handler = async event => {
-    console.log(event);
-
-    // return {
-    //     statusCode: 200,
-    //     headers: {
-    //         'Access-Control-Allow-Origin': '*'
-    //     },
-    //     isBase64Encoded: false,
-    //     body: Buffer.from(event.queryStringParameters.d, 'base64').toString()
-    // };
-
     const params = JSON.parse(
         Buffer.from(event.queryStringParameters.d, 'base64').toString()
     );
@@ -58,7 +47,9 @@ module.exports.handler = async event => {
                 'Access-Control-Allow-Origin': '*'
             },
             isBase64Encoded: false,
-            body: JSON.stringify(params)
+            body: JSON.stringify({
+                error: e.toString()
+            })
         };
     }
 };
