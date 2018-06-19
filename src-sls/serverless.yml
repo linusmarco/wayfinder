@@ -6,11 +6,19 @@ provider:
   runtime: nodejs8.10
   stage: dev
   region: us-east-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+      Resource: "arn:aws:s3:::${self:service}-${self:provider.stage}-assets/*"
 
 functions:
   index:
     handler: server/functions/index.handler
-    timeout: 120
+    timeout: 30
+    environment:
+      BUCKET_NAME: ${self:service}-${self:provider.stage}-assets
     events:
       - http: 
           path: walk
@@ -35,23 +43,16 @@ custom:
         condition:
           keyPrefixEquals: api/walk
 
-# custom:
-#     tableName: 'users-table-${self:provider.stage}'
-
-# resources:
-#   Resources:
-#     UsersDynamoDBTable:
-#       Type: 'AWS::DynamoDB::Table'
-#       Properties:
-#         AttributeDefinitions:
-#           -
-#             AttributeName: userId
-#             AttributeType: S
-#         KeySchema:
-#           -
-#             AttributeName: userId
-#             KeyType: HASH
-#         ProvisionedThroughput:
-#           ReadCapacityUnits: 1
-#           WriteCapacityUnits: 1
-#         TableName: ${self:custom.tableName}
+resources:
+  Resources:
+    S3Assets:
+      Type: AWS::S3::Bucket
+      Properties: 
+        BucketName: ${self:service}-${self:provider.stage}-assets
+        CorsConfiguration:
+          CorsRules:
+            - AllowedMethods:
+                - GET
+                - HEAD
+              AllowedOrigins:
+                - "*"

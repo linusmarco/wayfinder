@@ -22,25 +22,25 @@ function buildMap(containerId) {
     this.scale = 1;
 
     load().then(() => {
-        animate(100);
+        animate(50);
     });
 
     async function load() {
         const params = {
             mapArea: {
                 id: null,
-                s: 38.65,
-                w: -75.5,
-                n: 38.75,
-                e: -75.3
+                s: 38.57206,
+                w: -75.60722,
+                n: 38.81483,
+                e: -75.16949
             },
             metric: 'time',
             origins: [
                 {
                     name: 'My Origin',
                     rgb: [152, 78, 163],
-                    lat: 38.688868,
-                    lon: -75.384505
+                    lat: 38.6832935,
+                    lon: -75.3942897
                 }
             ],
             numTicks: 300,
