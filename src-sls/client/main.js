@@ -80,7 +80,7 @@ function buildMap(containerId) {
             context.arc(
                 o.loc[0],
                 o.loc[1],
-                lineWidth * 4 / this.scale,
+                (lineWidth * 4) / this.scale,
                 0,
                 2 * Math.PI,
                 false
@@ -127,11 +127,11 @@ function buildMap(containerId) {
 function get(url) {
     return new Promise((resolve, reject) => {
         let oReq = new XMLHttpRequest();
-        oReq.onreadystatechange = function() {
+        oReq.addEventListener('load', function() {
             resolve(this.responseText);
-        };
-        oReq.open('POST', url, true);
-        oReq.send(
+        });
+
+        const data = btoa(
             JSON.stringify({
                 mapArea: {
                     id: null,
@@ -162,6 +162,9 @@ function get(url) {
                 }
             })
         );
+
+        oReq.open('GET', `${url}?d=${data}`, true);
+        oReq.send();
     });
 }
 

@@ -6,16 +6,18 @@ const walk = require('./lib/walk');
 module.exports.handler = async event => {
     console.log(event);
 
-    // callback(null, {
+    // return {
     //     statusCode: 200,
     //     headers: {
     //         'Access-Control-Allow-Origin': '*'
     //     },
     //     isBase64Encoded: false,
-    //     body: JSON.stringify(event)
-    // });
+    //     body: Buffer.from(event.queryStringParameters.d, 'base64').toString()
+    // };
 
-    const params = JSON.parse(event.body);
+    const params = JSON.parse(
+        Buffer.from(event.queryStringParameters.d, 'base64').toString()
+    );
 
     try {
         const raw = await getData(params.mapArea);
@@ -51,7 +53,7 @@ module.exports.handler = async event => {
         };
     } catch (e) {
         return {
-            statusCode: 200,
+            statusCode: 500,
             headers: {
                 'Access-Control-Allow-Origin': '*'
             },
