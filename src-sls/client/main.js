@@ -1,6 +1,6 @@
 function buildMap(containerId) {
-    const width = 960;
-    const height = 700;
+    const width = document.documentElement.clientWidth;
+    const height = document.documentElement.clientHeight;
 
     const lineWidth = 1.5;
 
@@ -21,12 +21,42 @@ function buildMap(containerId) {
 
     this.scale = 1;
 
-    drawBBox();
-
-    load().then(animate);
+    load().then(() => {
+        animate(100);
+    });
 
     async function load() {
-        const data = JSON.parse(await get('/api/walk'));
+        const params = {
+            mapArea: {
+                id: null,
+                s: 38.65,
+                w: -75.5,
+                n: 38.75,
+                e: -75.3
+            },
+            metric: 'time',
+            origins: [
+                {
+                    name: 'My Origin',
+                    rgb: [152, 78, 163],
+                    lat: 38.688868,
+                    lon: -75.384505
+                }
+            ],
+            numTicks: 300,
+            size: {
+                width: width,
+                height: height,
+                margin: {
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 0
+                }
+            }
+        };
+
+        const data = JSON.parse(await get('/api/walk', params));
         const nodes = data.nodes;
         const origins = data.origins;
 
@@ -49,16 +79,12 @@ function buildMap(containerId) {
         this.maxTimeIdx = maxTimeIdx;
     }
 
-    function animate() {
+    function animate(frameRate) {
         drawOrigins(this.origins);
 
         let curTimeIdx = 0;
         const show = setInterval(() => {
-            console.log(curTimeIdx);
-
-            draw(this.nodeGroups[curTimeIdx]);
-            drawBBox();
-            drawOrigins(this.origins);
+            draw(this.nodeGroups[curTimeIdx], this.origins);
             curTimeIdx++;
 
             if (curTimeIdx === maxTimeIdx + 1) {
@@ -71,7 +97,7 @@ function buildMap(containerId) {
                         .on('zoom', zoomed.bind(this))
                 );
             }
-        }, 50);
+        }, frameRate);
     }
 
     function drawOrigins(origins) {
@@ -98,7 +124,7 @@ function buildMap(containerId) {
         context.strokeRect(0, 0, width, height);
     }
 
-    function draw(nodes) {
+    function draw(nodes, origins) {
         nodes.forEach(n => {
             context.beginPath();
             context.moveTo(n.pLoc[0], n.pLoc[1]);
@@ -108,6 +134,9 @@ function buildMap(containerId) {
             context.lineCap = 'round';
             context.stroke();
         });
+
+        //drawBBox();
+        drawOrigins(origins);
     }
 
     function zoomed() {
@@ -117,53 +146,21 @@ function buildMap(containerId) {
         context.clearRect(0, 0, width, height);
         context.translate(transform.x, transform.y);
         context.scale(this.scale, this.scale);
-        draw(this.nodes);
-        drawOrigins(this.origins);
+        draw(this.nodes, this.origins);
         context.restore();
-        drawBBox();
     }
 }
 
-function get(url) {
+function get(url, params) {
     return new Promise((resolve, reject) => {
         let oReq = new XMLHttpRequest();
         oReq.addEventListener('load', function() {
             resolve(this.responseText);
         });
 
-        const data = btoa(
-            JSON.stringify({
-                mapArea: {
-                    id: null,
-                    s: 38.65,
-                    w: -75.5,
-                    n: 38.75,
-                    e: -75.3
-                },
-                metric: 'time',
-                origins: [
-                    {
-                        name: 'My Origin',
-                        rgb: [152, 78, 163],
-                        lat: 38.688868,
-                        lon: -75.384505
-                    }
-                ],
-                numTicks: 300,
-                size: {
-                    width: 960,
-                    height: 700,
-                    margin: {
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                        left: 0
-                    }
-                }
-            })
-        );
+        const encoded = btoa(JSON.stringify(params));
 
-        oReq.open('GET', `${url}?d=${data}`, true);
+        oReq.open('GET', `${url}?d=${encoded}`, true);
         oReq.send();
     });
 }
