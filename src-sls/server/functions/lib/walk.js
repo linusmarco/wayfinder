@@ -70,6 +70,7 @@ function walk(data, origins, metric, numTicks, size) {
     });
 
     let walksDone = 0;
+    data['dupes'] = [];
     while (walks.length > 0) {
         walkThisWay(...walks[0]);
         walksDone++;
@@ -204,8 +205,18 @@ function walkThisWay(
         }
 
         if (alreadyCloser) {
+            const dupe = Object.assign({}, wayNode);
+
+            dupe.dist = dist;
+            dupe.time = time;
+            dupe.pLon = lastWayNode.lon;
+            dupe.pLat = lastWayNode.lat;
+            dupe.originId = originId;
+
+            ways['dupes'].push(dupe);
             break;
         }
+
         wayNode.dist = dist;
         wayNode.time = time;
         wayNode.pLon = lastWayNode.lon;
@@ -247,8 +258,18 @@ function walkThisWay(
         }
 
         if (alreadyCloser) {
+            const dupe = Object.assign({}, wayNode);
+
+            dupe.dist = dist;
+            dupe.time = time;
+            dupe.pLon = lastWayNode.lon;
+            dupe.pLat = lastWayNode.lat;
+            dupe.originId = originId;
+
+            ways['dupes'].push(dupe);
             break;
         }
+
         wayNode.dist = dist;
         wayNode.time = time;
         wayNode.pLon = lastWayNode.lon;
