@@ -1,4 +1,5 @@
 const d3 = require('d3');
+const _ = require('lodash');
 
 function walk(data, origins, metric, numTicks, size) {
     const width = size.width;
@@ -101,7 +102,7 @@ function walk(data, origins, metric, numTicks, size) {
 
     nodes = _.orderBy(
         nodes,
-        ['pathId', config.colorBy === 'dist' ? 'dist' : 'time'],
+        ['pathId', metric === 'dist' ? 'dist' : 'time'],
         ['asc', 'asc']
     );
 
