@@ -71,6 +71,7 @@ config.origins.forEach((o, i) => {
 });
 
 let walksDone = 0;
+ways['dupes'] = [];
 while (walks.length > 0) {
     walkThisWay(...walks[0]);
     walksDone++;
@@ -201,6 +202,7 @@ function walkThisWay(
 
     lastWayNode = startNode;
     while ((wayNode = ways[wayId][nextUp])) {
+        console.log(`${lastWayNode.nodeId} to ${wayNode.nodeId}`);
         const thisDist = nodeDist(lastWayNode, wayNode);
         const dist = lastWayNode.dist + thisDist;
         const time = lastWayNode.time + thisDist / wayNode.maxspeed;
@@ -217,13 +219,26 @@ function walkThisWay(
         }
 
         if (alreadyCloser) {
+            const dupe = Object.assign({}, wayNode);
+
+            dupe.dist = dist;
+            dupe.time = time;
+            dupe.pLon = lastWayNode.lon;
+            dupe.pLat = lastWayNode.lat;
+            dupe.originId = originId;
+
+            dupe.dupe = true;
+            ways['dupes'].push(dupe);
             break;
         }
+
         wayNode.dist = dist;
         wayNode.time = time;
         wayNode.pLon = lastWayNode.lon;
         wayNode.pLat = lastWayNode.lat;
         wayNode.originId = originId;
+
+        wayNode.lastWayNodeId = lastWayNode.nodeId;
 
         wayNode.ints.forEach(int => {
             queue.push([
@@ -242,6 +257,7 @@ function walkThisWay(
 
     lastWayNode = startNode;
     while ((wayNode = ways[wayId][nextDown])) {
+        console.log(`${lastWayNode.nodeId} to ${wayNode.nodeId}`);
         const thisDist = nodeDist(lastWayNode, wayNode);
         const dist = lastWayNode.dist + thisDist;
         const time = lastWayNode.time + thisDist / wayNode.maxspeed;
@@ -258,13 +274,26 @@ function walkThisWay(
         }
 
         if (alreadyCloser) {
+            const dupe = Object.assign({}, wayNode);
+
+            dupe.dist = dist;
+            dupe.time = time;
+            dupe.pLon = lastWayNode.lon;
+            dupe.pLat = lastWayNode.lat;
+            dupe.originId = originId;
+
+            dupe.dupe = true;
+            ways['dupes'].push(dupe);
             break;
         }
+
         wayNode.dist = dist;
         wayNode.time = time;
         wayNode.pLon = lastWayNode.lon;
         wayNode.pLat = lastWayNode.lat;
         wayNode.originId = originId;
+
+        wayNode.lastWayNodeId = lastWayNode.nodeId;
 
         wayNode.ints.forEach(int => {
             queue.push([
