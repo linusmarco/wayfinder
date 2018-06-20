@@ -83,13 +83,31 @@ function walk(data, origins, metric, numTicks, size) {
             n.loc = mercatorProj([n.lon, n.lat]);
             n.pLoc = mercatorProj([n.pLon, n.pLat]);
 
+            n.lastWayNodeId = String(n.lastWayNodeId);
+            n.lastWayId = String(n.lastWayId);
+            n.nodeId = String(n.nodeId);
+            n.wayId = String(n.wayId);
+
+            n.pathId = [
+                [n.wayId, n.nodeId].join('-'),
+                [n.lastWayId, n.lastWayNodeId].join('-')
+            ]
+                .sort()
+                .join('-');
+
             if (n.pLon) nodes.push(n);
         });
     });
 
-    let maxDist, maxTime;
+    nodes = _.orderBy(
+        nodes,
+        ['pathId', config.colorBy === 'dist' ? 'dist' : 'time'],
+        ['asc', 'asc']
+    );
 
-    let timeIdxScale, fadeScale;
+    nodes = _.sortedUniqBy(nodes, 'pathId');
+
+    let maxDist, maxTime, timeIdxScale, fadeScale;
 
     if (metric === 'dist') {
         maxDist = d3.max(nodes, n => n.dist);
@@ -212,6 +230,8 @@ function walkThisWay(
             dupe.pLon = lastWayNode.lon;
             dupe.pLat = lastWayNode.lat;
             dupe.originId = originId;
+            dupe.lastWayNodeId = lastWayNode.nodeId;
+            dupe.lastWayId = lastWayNode.wayId;
 
             ways['dupes'].push(dupe);
             break;
@@ -222,6 +242,8 @@ function walkThisWay(
         wayNode.pLon = lastWayNode.lon;
         wayNode.pLat = lastWayNode.lat;
         wayNode.originId = originId;
+        wayNode.lastWayNodeId = lastWayNode.nodeId;
+        wayNode.lastWayId = lastWayNode.wayId;
 
         wayNode.ints.forEach(int => {
             queue.push([
@@ -265,6 +287,8 @@ function walkThisWay(
             dupe.pLon = lastWayNode.lon;
             dupe.pLat = lastWayNode.lat;
             dupe.originId = originId;
+            dupe.lastWayNodeId = lastWayNode.nodeId;
+            dupe.lastWayId = lastWayNode.wayId;
 
             ways['dupes'].push(dupe);
             break;
@@ -275,6 +299,8 @@ function walkThisWay(
         wayNode.pLon = lastWayNode.lon;
         wayNode.pLat = lastWayNode.lat;
         wayNode.originId = originId;
+        wayNode.lastWayNodeId = lastWayNode.nodeId;
+        wayNode.lastWayId = lastWayNode.wayId;
 
         wayNode.ints.forEach(int => {
             queue.push([
