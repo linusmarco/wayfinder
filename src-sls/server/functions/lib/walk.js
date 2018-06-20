@@ -141,7 +141,7 @@ function walk(data, origins, metric, numTicks, size) {
         console.error(`invalid 'by': ${metric}`);
     }
 
-    nodes.forEach(n => {
+    nodes.forEach((n, i, a) => {
         const origin = origins[n.originId];
 
         n.timeIdx = timeIdxScale(metric === 'dist' ? n.dist : n.time);
@@ -150,6 +150,14 @@ function walk(data, origins, metric, numTicks, size) {
         const fadedAmt = fadeScale(metric === 'dist' ? n.dist : n.time);
         color.l = color.l + (1 - color.l) * fadedAmt;
         n.color = color.toString();
+
+        a[i] = _.pick(n, [
+            'loc',
+            'pLoc',
+            'timeIdx',
+            'color',
+            metric === 'dist' ? 'dist' : 'time'
+        ]);
     });
 
     nodes.sort((a, b) => {
