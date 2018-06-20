@@ -1,13 +1,30 @@
 const crypto = require('crypto');
-const AWS = require('aws-sdk');
-const S3 = new AWS.S3();
 
-const getData = require('./lib/getData');
-const parseData = require('./lib/parseData');
-const merge = require('./lib/merge');
-const walk = require('./lib/walk');
+const hlp = require('./lib/helpers');
 
-module.exports.handler = async event => {
+async function poll(event) {
+    const S3Params = {
+        Bucket: process.env.BUCKET_NAME,
+        Key: event.queryStringParameters.d
+    };
+
+    try {
+        return await hlp.S3GetUrl(S3Params);
+    } catch (e) {
+        return {
+            statusCode: 404,
+            headers: {
+                'Access-Control-Allow-Origin': '*'
+            },
+            isBase64Encoded: false,
+            body: JSON.stringify({
+                error: e.toString()
+            })
+        };
+    }
+}
+
+async function initialize(event) {
     const params = JSON.parse(
         Buffer.from(event.queryStringParameters.d, 'base64').toString()
     );
@@ -19,48 +36,32 @@ module.exports.handler = async event => {
 
     const S3Params = {
         Bucket: process.env.BUCKET_NAME,
-        Key: S3Key
+        Key: `${S3Key}-walked`
     };
 
     try {
-        return await S3GetUrl(S3Params);
+        return await hlp.S3GetUrl(S3Params);
     } catch (e) {
         console.log('could not find cached map');
+
         try {
-            const raw = await getData(params.mapArea);
-            console.log(
-                `Got ${raw.elements.length} nodes and ways from overpass API`
-            );
-            const nodes = parseData(
-                raw,
-                params.mapArea.id ? null : params.mapArea
-            );
-            console.log(`Parsed ${nodes.length} nodes`);
-            const merged = merge(nodes);
-            console.log(
-                `Calculated intersections of ${Object.keys(merged).length} ways`
-            );
-            const walked = walk(
-                merged,
-                params.origins,
-                params.metric,
-                params.numTicks,
-                params.size
-            );
-            console.log(
-                `Finished walking ${walked.nodes.length} nodes from ${
-                    walked.origins.length
-                } origins`
+            await hlp.SNSPublish(
+                { params, S3Key },
+                process.env.GET_DATA_TOPIC_ARN
             );
 
-            await S3Put({
-                Bucket: process.env.BUCKET_NAME,
-                Key: S3Key,
-                Body: JSON.stringify(walked),
-                ContentType: 'application/json'
-            });
-
-            return await S3GetUrl(S3Params);
+            return {
+                statusCode: 200,
+                headers: {
+                    'Access-Control-Allow-Origin': '*'
+                },
+                isBase64Encoded: false,
+                body: JSON.stringify({
+                    wait: true,
+                    params,
+                    S3Key
+                })
+            };
         } catch (e) {
             return {
                 statusCode: 500,
@@ -74,42 +75,9 @@ module.exports.handler = async event => {
             };
         }
     }
+}
+
+module.exports = {
+    initialize,
+    poll
 };
-
-async function S3GetUrl(params) {
-    return new Promise((res, rej) => {
-        S3.headObject(params, (err, data) => {
-            if (err) {
-                console.log('no headObject');
-                rej(err);
-            } else {
-                S3.getSignedUrl('getObject', params, (err, data) => {
-                    if (err) {
-                        console.log('no getSignedUrl');
-                        rej(err);
-                    } else {
-                        res({
-                            statusCode: 301,
-                            headers: {
-                                'Access-Control-Allow-Origin': '*',
-                                Location: data
-                            }
-                        });
-                    }
-                });
-            }
-        });
-    });
-}
-
-async function S3Put(params) {
-    return new Promise((res, rej) => {
-        S3.putObject(params, (err, data) => {
-            if (err) {
-                rej(err);
-            } else {
-                res(data);
-            }
-        });
-    });
-}

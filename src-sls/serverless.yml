@@ -6,29 +6,118 @@ provider:
   runtime: nodejs8.10
   stage: dev
   region: us-east-1
+  environment:
+    BUCKET_NAME: ${self:service}-${self:provider.stage}-assets
+    
+    GET_DATA_TOPIC: ${self:service}-${self:provider.stage}-getData
+    GET_DATA_TOPIC_ARN:
+      Fn::Join:
+        - ":"
+        - - arn
+          - aws
+          - sns
+          - Ref: AWS::Region
+          - Ref: AWS::AccountId
+          - ${self:provider.environment.GET_DATA_TOPIC}
+
+    PARSE_DATA_TOPIC: ${self:service}-${self:provider.stage}-parseData
+    PARSE_DATA_TOPIC_ARN:
+      Fn::Join:
+        - ":"
+        - - arn
+          - aws
+          - sns
+          - Ref: AWS::Region
+          - Ref: AWS::AccountId
+          - ${self:provider.environment.PARSE_DATA_TOPIC}
+
+    MERGE_DATA_TOPIC: ${self:service}-${self:provider.stage}-mergeData
+    MERGE_DATA_TOPIC_ARN:
+      Fn::Join:
+        - ":"
+        - - arn
+          - aws
+          - sns
+          - Ref: AWS::Region
+          - Ref: AWS::AccountId
+          - ${self:provider.environment.MERGE_DATA_TOPIC}
+
+    WALK_DATA_TOPIC: ${self:service}-${self:provider.stage}-walkData
+    WALK_DATA_TOPIC_ARN:
+      Fn::Join:
+        - ":"
+        - - arn
+          - aws
+          - sns
+          - Ref: AWS::Region
+          - Ref: AWS::AccountId
+          - ${self:provider.environment.WALK_DATA_TOPIC}
+
+
   iamRoleStatements:
     - Effect: Allow
       Action:
         - s3:PutObject
         - s3:GetObject
       Resource: "arn:aws:s3:::${self:service}-${self:provider.stage}-assets/*"
+    - Effect: 'Allow'
+      Action:
+        - "sns:Publish"
+      Resource:
+        - ${self:provider.environment.GET_DATA_TOPIC_ARN}
+        - ${self:provider.environment.PARSE_DATA_TOPIC_ARN}
+        - ${self:provider.environment.MERGE_DATA_TOPIC_ARN}
+        - ${self:provider.environment.WALK_DATA_TOPIC_ARN}
 
 functions:
-  index:
-    handler: server/functions/index.handler
+  initialize:
+    handler: server/functions/index.initialize
     timeout: 30
-    environment:
-      BUCKET_NAME: ${self:service}-${self:provider.stage}-assets
     events:
       - http: 
-          path: walk
+          path: init
           method: get
           cors: true
 
+  poll:
+    handler: server/functions/index.poll
+    timeout: 30
+    events:
+      - http: 
+          path: poll
+          method: get
+          cors: true
+
+  getData:
+    handler: server/functions/processor.getData
+    timeout: 90
+    events:
+      - sns: ${self:provider.environment.GET_DATA_TOPIC}
+
+  parseData:
+    handler: server/functions/processor.parseData
+    timeout: 90
+    events:
+      - sns: ${self:provider.environment.PARSE_DATA_TOPIC}
+
+  mergeData:
+    handler: server/functions/processor.mergeData
+    timeout: 90
+    events:
+      - sns: ${self:provider.environment.MERGE_DATA_TOPIC}
+
+  walkData:
+    handler: server/functions/processor.walkData
+    timeout: 90
+    events:
+      - sns: ${self:provider.environment.WALK_DATA_TOPIC}
+    
 plugins:
   - serverless-finch
 
 custom:
+  
+
   client:
     bucketName: wayfinder-site
     distributionFolder: client
@@ -39,9 +128,16 @@ custom:
           hostName: "${file(./slsHelpers.js):getApiUrl}.execute-api.${self:provider.region}.amazonaws.com"
           httpRedirectCode: 301
           protocol: https
-          replaceKeyPrefixWith: ${self:provider.stage}/walk
+          replaceKeyPrefixWith: ${self:provider.stage}/init
         condition:
-          keyPrefixEquals: api/walk
+          keyPrefixEquals: api/init
+      - redirect: 
+          hostName: "${file(./slsHelpers.js):getApiUrl}.execute-api.${self:provider.region}.amazonaws.com"
+          httpRedirectCode: 301
+          protocol: https
+          replaceKeyPrefixWith: ${self:provider.stage}/poll
+        condition:
+          keyPrefixEquals: api/poll
 
 resources:
   Resources:

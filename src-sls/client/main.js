@@ -22,25 +22,73 @@ function buildMap(containerId) {
     this.scale = 1;
 
     load().then(() => {
-        animate(50);
+        animate(10);
     });
 
     async function load() {
         const params = {
             mapArea: {
                 id: null,
-                s: 38.57206,
-                w: -75.60722,
-                n: 38.81483,
-                e: -75.16949
+                s: 38.669596,
+                w: -75.64466,
+                n: 38.964287,
+                e: -75.033203
             },
             metric: 'time',
             origins: [
                 {
-                    name: 'My Origin',
+                    name: 'Ellendale Fire Company',
+                    rgb: [166, 86, 40],
+                    lat: 38.807206,
+                    lon: -75.421842
+                },
+                {
+                    name: 'Carlisle Fire Company',
+                    rgb: [228, 26, 28],
+                    lat: 38.91464,
+                    lon: -75.440027
+                },
+                {
+                    name: 'Memorial Fire Company',
+                    rgb: [55, 126, 184],
+                    lat: 38.913613,
+                    lon: -75.305328
+                },
+                {
+                    name: 'Milton Fire Company',
+                    rgb: [77, 175, 74],
+                    lat: 38.777506,
+                    lon: -75.309647
+                },
+                {
+                    name: 'Georgetown Fire Company',
                     rgb: [152, 78, 163],
-                    lat: 38.6832935,
-                    lon: -75.3942897
+                    lat: 38.688868,
+                    lon: -75.384505
+                },
+                {
+                    name: 'Bridgeville Fire Company',
+                    rgb: [255, 127, 0],
+                    lat: 38.742613,
+                    lon: -75.604329
+                },
+                {
+                    name: 'Greenwood Fire Company',
+                    rgb: [166, 86, 40],
+                    lat: 38.804335,
+                    lon: -75.584825
+                },
+                {
+                    name: 'Farmington Fire Company',
+                    rgb: [228, 26, 28],
+                    lat: 38.870354,
+                    lon: -75.575536
+                },
+                {
+                    name: 'Houston Fire Company',
+                    rgb: [55, 126, 184],
+                    lat: 38.917784,
+                    lon: -75.505123
                 }
             ],
             numTicks: 300,
@@ -56,7 +104,7 @@ function buildMap(containerId) {
             }
         };
 
-        const data = JSON.parse(await get('/api/walk', params));
+        const data = await getData(params);
         const nodes = data.nodes;
         const origins = data.origins;
 
@@ -106,7 +154,7 @@ function buildMap(containerId) {
             context.arc(
                 o.loc[0],
                 o.loc[1],
-                (lineWidth * 4) / this.scale,
+                lineWidth * 4 / this.scale,
                 0,
                 2 * Math.PI,
                 false
@@ -151,17 +199,45 @@ function buildMap(containerId) {
     }
 }
 
-function get(url, params) {
+async function getData(params) {
+    const encoded = btoa(JSON.stringify(params));
+    let initResp = await get('/api/init', encoded);
+    initResp = JSON.parse(initResp.responseText);
+
+    if (!initResp.wait) {
+        return initResp;
+    } else {
+        return JSON.parse(await poll(`${initResp.S3Key}-walked`));
+    }
+}
+
+async function poll(key) {
+    let pollResp = {};
+    while (pollResp.status !== 200) {
+        await wait(10000);
+        pollResp = await get('/api/poll', key);
+    }
+
+    return pollResp.responseText;
+}
+
+function get(url, data) {
     return new Promise((resolve, reject) => {
         let oReq = new XMLHttpRequest();
         oReq.addEventListener('load', function() {
-            resolve(this.responseText);
+            resolve(this);
         });
 
-        const encoded = btoa(JSON.stringify(params));
-
-        oReq.open('GET', `${url}?d=${encoded}`, true);
+        oReq.open('GET', `${url}?d=${data}`, true);
         oReq.send();
+    });
+}
+
+function wait(ms) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve();
+        }, ms);
     });
 }
 

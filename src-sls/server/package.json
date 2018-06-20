@@ -17,6 +17,7 @@
     },
     "homepage": "https://github.com/linusmarco/wayfinder#readme",
     "dependencies": {
+        "aws-sdk": "2.259.1",
         "query-overpass": "^1.5.3",
         "d3": "^5.4.0",
         "lodash": "^4.17.10"
