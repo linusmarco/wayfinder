@@ -63,3 +63,9 @@ typings/
 
 # next.js build output
 .next
+
+#SERVERLESS STUFF
+admin.env
+.env
+_meta
+.serverless
