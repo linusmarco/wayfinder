@@ -38,7 +38,7 @@ module.exports.handler = async event => {
             console.log(`Parsed ${nodes.length} nodes`);
             const merged = merge(nodes);
             console.log(
-                `Calcuated intersections of ${Object.keys(merged).length} ways`
+                `Calculated intersections of ${Object.keys(merged).length} ways`
             );
             const walked = walk(
                 merged,
