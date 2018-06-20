@@ -1,5 +1,6 @@
 const fs = require('fs');
 const d3 = require('d3');
+const _ = require('lodash');
 
 const config = require('../config.json');
 
@@ -86,9 +87,29 @@ Object.keys(ways).forEach(w => {
         n.loc = mercatorProj([n.lon, n.lat]);
         n.pLoc = mercatorProj([n.pLon, n.pLat]);
 
+        n.lastWayNodeId = String(n.lastWayNodeId);
+        n.lastWayId = String(n.lastWayId);
+        n.nodeId = String(n.nodeId);
+        n.wayId = String(n.wayId);
+
+        n.pathId = [
+            [n.wayId, n.nodeId].join('-'),
+            [n.lastWayId, n.lastWayNodeId].join('-')
+        ]
+            .sort()
+            .join('-');
+
         if (n.pLon) nodes.push(n);
     });
 });
+
+nodes = _.orderBy(
+    nodes,
+    ['pathId', config.colorBy === 'dist' ? 'dist' : 'time'],
+    ['asc', 'asc']
+);
+
+nodes = _.sortedUniqBy(nodes, 'pathId');
 
 let maxDist, maxTime;
 
@@ -132,7 +153,7 @@ if (config.colorBy === 'dist') {
     console.error(`invalid 'by': ${config.colorBy}`);
 }
 
-nodes.forEach(n => {
+nodes.forEach((n, i, a) => {
     const origin = config.origins[n.originId];
 
     n.timeIdx = timeIdxScale(config.colorBy === 'dist' ? n.dist : n.time);
@@ -141,12 +162,22 @@ nodes.forEach(n => {
     const fadedAmt = fadeScale(config.colorBy === 'dist' ? n.dist : n.time);
     color.l = color.l + (1 - color.l) * fadedAmt;
     n.color = color.toString();
+
+    a[i] = _.pick(n, [
+        'loc',
+        'pLoc',
+        'timeIdx',
+        'color',
+        config.colorBy === 'dist' ? 'dist' : 'time'
+    ]);
 });
 
 nodes.sort((a, b) => {
     if (config.colorBy === 'dist') return d3.ascending(a.dist, b.dist);
     else return d3.ascending(a.time, b.time);
 });
+
+console.log(nodes[0]);
 
 fs.writeFileSync(
     '../data/walked.json',
@@ -227,6 +258,9 @@ function walkThisWay(
             dupe.pLat = lastWayNode.lat;
             dupe.originId = originId;
 
+            dupe.lastWayNodeId = lastWayNode.nodeId;
+            dupe.lastWayId = lastWayNode.wayId;
+
             dupe.dupe = true;
             ways['dupes'].push(dupe);
             break;
@@ -239,6 +273,7 @@ function walkThisWay(
         wayNode.originId = originId;
 
         wayNode.lastWayNodeId = lastWayNode.nodeId;
+        wayNode.lastWayId = lastWayNode.wayId;
 
         wayNode.ints.forEach(int => {
             queue.push([
@@ -282,6 +317,9 @@ function walkThisWay(
             dupe.pLat = lastWayNode.lat;
             dupe.originId = originId;
 
+            dupe.lastWayNodeId = lastWayNode.nodeId;
+            dupe.lastWayId = lastWayNode.wayId;
+
             dupe.dupe = true;
             ways['dupes'].push(dupe);
             break;
@@ -294,6 +332,7 @@ function walkThisWay(
         wayNode.originId = originId;
 
         wayNode.lastWayNodeId = lastWayNode.nodeId;
+        wayNode.lastWayId = lastWayNode.wayId;
 
         wayNode.ints.forEach(int => {
             queue.push([

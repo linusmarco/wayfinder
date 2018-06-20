@@ -71,7 +71,7 @@ function buildMap(containerId) {
                         .on('zoom', zoomed.bind(this))
                 );
             }
-        }, 200);
+        }, 50);
     }
 
     function drawOrigins(origins) {
@@ -80,7 +80,7 @@ function buildMap(containerId) {
             context.arc(
                 o.loc[0],
                 o.loc[1],
-                (lineWidth * 4) / this.scale,
+                lineWidth * 4 / this.scale,
                 0,
                 2 * Math.PI,
                 false
