@@ -1,9 +1,14 @@
 <template>
   <div id="control-panel" ref="root">
-    <div ref="head" class="control-panel-head"><span ref="expandToggle" class="expand-toggle" @click="toggleExpand">{{ expanded ? '&minus;' : '+' }}</span></div>
+    <div ref="head" class="control-panel-head">
+      <span ref="expandToggle" class="expand-toggle" @click="toggleExpand">
+        <span class="big">{{ expanded ? '&minus;' : '+' }} </span>
+        <span class="little">{{ expanded ? 'collapse' : 'expand' }}</span>
+      </span>
+    </div>
     <div ref="body" class="control-panel-body">
       
-      <h3 class="section-title">Map Bounds:</h3>
+      <h3 class="section-title">Map bounds (lat/long):</h3>
       <label class="bound-input-label" for="northBoundInput">
         <span>North</span>
         <input v-model="params.mapArea.n" type="number" value="0" step=".0001" min="-90" max="90">
@@ -24,26 +29,45 @@
       <br>
       
       <h3 class="section-title">Measure proximity by:</h3>
-      <div class="dist-metric-radio-group">
+      <div class="radio-group">
         <input v-model="params.metric" type="radio" name="dist-metric" value="time" id="dist-metric-input-time">
-        <label class="dist-metric-input-label" for="dist-metric-input-time">Travel Time</label>
+        <label class="radio-input-label" for="dist-metric-input-time">Travel Time</label>
         <input v-model="params.metric" type="radio" name="dist-metric" value="dist" id="dist-metric-input-dist">
-        <label class="dist-metric-input-label" for="dist-metric-input-dist">Travel Distance</label>
+        <label class="radio-input-label" for="dist-metric-input-dist">Travel Distance</label>
       </div>
       
       <br>
 
       <h3 class="section-title">Origin points:</h3>
       <div v-for="(origin, i) in params.origins" :key="i" class="origin-point-fieldset-holder">
-        <h4 class="section-title">Origin {{ i + 1 }}:</h4>
+        <div class="remove-origin-button" @click="removeOrigin(i)">
+          <span class="big">&times; </span>
+          <span class="little">remove</span>
+        </div>
+
+        <label class="origin-loc-input-label">
+          <span>Name</span>
+          <input v-model="params.origins[i].name" type="text">
+        </label>
+        <label class="origin-loc-input-label">
+          <span>Color</span>
+          <input v-model="params.origins[i].hex" type="color">
+        </label>
         <label class="origin-loc-input-label">
           <span>Latitude</span>
-          <input v-model="params.origins[i].lat" type="number" value="0">
+          <input v-model="params.origins[i].lat" type="number">
         </label>
         <label class="origin-loc-input-label">
           <span>Longitude</span>
-          <input v-model="params.origins[i].lon" type="number" value="0">
+          <input v-model="params.origins[i].lon" type="number">
         </label>
+        <div class="radio-group">
+          <input v-model="params.origins[i].hide" type="radio" :name="`origin-hide-${i}`" value="hide" :id="`origin-hide-input-hide-${i}`">
+          <label class="radio-input-label" :for="`origin-hide-input-hide-${i}`">Hide</label>
+          <input v-model="params.origins[i].hide" type="radio" :name="`origin-hide-${i}`" value="show" :id="`origin-hide-input-show-${i}`">
+          <label class="radio-input-label" :for="`origin-hide-input-show-${i}`">Show</label>
+        </div>
+        <br>
       </div>
 
       <br>
@@ -58,6 +82,9 @@
 </template>
 
 <script>
+import hlp from '../services/Helpers';
+import ParameterValidator from '../services/ParameterValidator';
+
 export default {
     name: 'ControlPanel',
     data: () => {
@@ -75,9 +102,10 @@ export default {
                 origins: [
                     {
                         name: 'Origin 1',
-                        rgb: [166, 86, 40],
+                        hex: '#4286f4',
                         lat: 38.8,
-                        lon: -75.42
+                        lon: -75.42,
+                        hide: 'show'
                     }
                 ],
                 numTicks: 300,
@@ -94,6 +122,25 @@ export default {
             }
         };
     },
+    mounted() {
+        const savedParams = hlp.getUrlParameterByName('saved');
+
+        if (savedParams) {
+            try {
+                this.params = hlp.urlDecodeObj(savedParams);
+                this.mapIt();
+            } catch {
+                this.$parent.$refs.messageBox.open(
+                    {
+                        label: 'ERROR: ',
+                        message:
+                            "Couldn't load your saved configuration. Sorry!"
+                    },
+                    'rgb(197, 19, 19)'
+                );
+            }
+        }
+    },
     methods: {
         toggleExpand() {
             this.expanded = !this.expanded;
@@ -102,14 +149,40 @@ export default {
         },
         addOrigin() {
             this.params.origins.push({
-                name: `Origin ${this.params.origins.length}`,
-                rgb: [166, 86, 40],
+                name: `Origin ${this.params.origins.length + 1}`,
+                hex: '#4286f4',
                 lat: 0,
-                lon: 0
+                lon: 0,
+                hide: 'show'
             });
         },
+        removeOrigin(i) {
+            this.params.origins.splice(i, 1);
+        },
         mapIt() {
-            this.$emit('map-it', this.params);
+            const mapParams = JSON.parse(JSON.stringify(this.params));
+
+            mapParams.origins = mapParams.origins.filter(
+                o => o.hide === 'show'
+            );
+
+            mapParams.origins.forEach(o => {
+                o.rgb = hlp.hexToRgb(o.hex);
+            });
+
+            const v = new ParameterValidator();
+            v.validate(mapParams);
+            if (v.valid()) {
+                this.$emit('map-it', mapParams, this.params);
+            } else {
+                this.$parent.$refs.messageBox.open(
+                    {
+                        label: 'ERROR: ',
+                        message: v.errors[0].display
+                    },
+                    'rgb(197, 19, 19)'
+                );
+            }
         }
     }
 };
@@ -118,14 +191,13 @@ export default {
 <style scoped>
 #control-panel {
     background-color: #fff;
-    box-shadow: 0 0 8px 2px #999;
+    box-shadow: 0 0 4px 1px #999;
 
     position: fixed;
     left: 2%;
     top: 2%;
 
     width: 400px;
-    /* height: 500px; */
     height: 96%;
     overflow: hidden;
 
@@ -210,15 +282,25 @@ export default {
 .origin-loc-input-label input {
     float: left;
     position: absolute;
-    width: calc(65% - 1rem);
     right: 0;
     top: 0;
     bottom: 0;
+}
+
+.bound-input-label input,
+.origin-loc-input-label input[type='number'],
+.origin-loc-input-label input[type='text'] {
+    width: calc(65% - 1rem);
     padding: 0.5rem;
 }
 
-.origin-loc-input-label input {
+.origin-loc-input-label input[type='number'],
+.origin-loc-input-label input[type='text'] {
     width: calc(55% - 1rem);
+}
+
+.origin-loc-input-label input[type='color'] {
+    width: calc(55% - 2px);
 }
 
 .bound-input-label span,
@@ -231,39 +313,62 @@ export default {
     line-height: 2rem;
 }
 
-.dist-metric-radio-group input[type='radio'] {
+.radio-group input[type='radio'] {
     position: absolute;
     visibility: hidden;
     display: none;
 }
 
-.dist-metric-radio-group label {
+.radio-group label {
     display: inline-block;
     cursor: pointer;
     font-weight: bold;
     padding: 5px 20px;
 }
 
-.dist-metric-radio-group input[type='radio']:checked + label {
+.radio-group input[type='radio']:checked + label {
     background: rgb(59, 88, 185);
     color: #eee;
 }
 
-.dist-metric-radio-group label + input[type='radio'] + label {
+.radio-group label + input[type='radio'] + label {
     border-left: solid 2px rgb(59, 88, 185);
     color: rgb(59, 88, 185);
 }
 
-.dist-metric-radio-group {
+.radio-group {
     border: solid 2px rgb(59, 88, 185);
     display: inline-block;
-    margin: 20px;
+    margin: 10px;
     border-radius: 10px;
     overflow: hidden;
 }
 
 .origin-point-fieldset-holder {
-    padding-left: 1.5rem;
+    padding-left: 2rem;
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid #bbb;
+}
+
+.remove-origin-button {
+    float: right;
+    height: 2.3rem;
+
+    margin: 3.5rem 15% 3.5rem 0rem;
+    padding: 0 0.5rem;
+
+    font-size: 1.5rem;
+    line-height: 2.3rem;
+    text-align: center;
+    font-weight: bold;
+    background-color: rgb(197, 19, 19);
+    color: #eee;
+
+    cursor: pointer;
+}
+
+.remove-origin-button:hover {
+    background-color: rgb(228, 0, 0);
 }
 
 #add-origin {
@@ -281,12 +386,12 @@ export default {
     cursor: pointer;
 }
 
-#add-origin .big {
+.big {
     font-size: 1.8rem;
     vertical-align: middle;
 }
 
-#add-origin .little {
+.little {
     font-size: 1.2rem;
     vertical-align: middle;
 }

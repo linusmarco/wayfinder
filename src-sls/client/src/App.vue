@@ -1,36 +1,50 @@
 <template>
   <div id="app">
     <ControlPanel @map-it="processRequest"/>
-    <!-- {{ params }} -->
+    <LoadingScreen ref="loadingScreen"/>
+    <MessageBox ref="messageBox"/>
   </div>
 </template>
 
 <script>
+import hlp from './services/Helpers';
 import DataService from './services/DataService';
 import DrawService from './services/DrawService';
 
 import ControlPanel from './components/ControlPanel.vue';
+import LoadingScreen from './components/LoadingScreen.vue';
+import MessageBox from './components/MessageBox.vue';
 
 export default {
     name: 'app',
     data: () => {
-        return {
-            params: {}
-        };
+        return {};
     },
     mounted() {
         this.drawService = new DrawService('app');
         this.dataService = new DataService();
     },
     components: {
-        ControlPanel
+        ControlPanel,
+        LoadingScreen,
+        MessageBox
     },
     methods: {
-        async processRequest(params) {
-            this.params = params;
-            console.log(params);
-            const data = await this.dataService.getData(params);
-            this.drawService.draw(data);
+        async processRequest(mapParams, rawParams) {
+            this.$refs.loadingScreen.toggleVisibility();
+            // const data = await this.dataService.getData(mapParams);
+            await hlp.wait(500);
+            this.$refs.loadingScreen.toggleVisibility();
+
+            const qParam = hlp.urlEncodeObj(rawParams);
+            history.pushState({}, document.title, `?saved=${qParam}`);
+            this.$refs.messageBox.open({
+                label: 'HINT: ',
+                message:
+                    'Copy the new URL in the address bar and use it to come back to this exact map!'
+            });
+
+            // this.drawService.draw(data);
         }
     }
 };
