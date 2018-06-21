@@ -30,18 +30,18 @@ export default class Helpers {
 
     static urlEncodeObj(obj) {
         return btoa(JSON.stringify(obj))
-            .replace(/\+/, '.')
-            .replace(/\//, '_')
-            .replace(/=/, '-');
+            .replace(/\+/g, '.')
+            .replace(/\//g, '_')
+            .replace(/=/g, '-');
     }
 
     static urlDecodeObj(encoded) {
         return JSON.parse(
             atob(
                 encoded
-                    .replace(/\./, '+')
-                    .replace(/_/, '/')
-                    .replace(/-/, '=')
+                    .replace(/\./g, '+')
+                    .replace(/_/g, '/')
+                    .replace(/-/g, '=')
             )
         );
     }
