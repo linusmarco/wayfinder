@@ -11,19 +11,19 @@
       <h3 class="section-title">Map bounds (lat/long):</h3>
       <label class="bound-input-label" for="northBoundInput">
         <span>North</span>
-        <input v-model="params.mapArea.n" type="number" value="0" step=".0001" min="-90" max="90">
+        <input v-model="params.mapArea.n" type="number" step=".0001" min="-90" max="90">
       </label>
       <label class="bound-input-label" for="southBoundInput">
         <span>South</span>
-        <input v-model="params.mapArea.s" type="number" value="0" step=".0001" min="-180" max="180">
+        <input v-model="params.mapArea.s" type="number" step=".0001" min="-180" max="180">
       </label>
       <label class="bound-input-label" for="eastBoundInput">
         <span>East</span>
-        <input v-model="params.mapArea.e" type="number" value="0" step=".0001" min="-90" max="90">
+        <input v-model="params.mapArea.e" type="number" step=".0001" min="-90" max="90">
       </label>
       <label class="bound-input-label" for="westBoundInput">
         <span>West</span>
-        <input v-model="params.mapArea.w" type="number" value="0" step=".0001" min="-180" max="180">
+        <input v-model="params.mapArea.w" type="number" step=".0001" min="-180" max="180">
       </label>
       
       <br>
@@ -55,11 +55,11 @@
         </label>
         <label class="origin-loc-input-label">
           <span>Latitude</span>
-          <input v-model="params.origins[i].lat" type="number">
+          <input v-model="params.origins[i].lat" type="number" step=".0001" min="-90" max="90">
         </label>
         <label class="origin-loc-input-label">
           <span>Longitude</span>
-          <input v-model="params.origins[i].lon" type="number">
+          <input v-model="params.origins[i].lon" type="number" step=".0001" min="-180" max="180">
         </label>
         <div class="radio-group">
           <input v-model="params.origins[i].hide" type="radio" :name="`origin-hide-${i}`" value="hide" :id="`origin-hide-input-hide-${i}`">
@@ -102,7 +102,7 @@ export default {
                 origins: [
                     {
                         name: 'Origin 1',
-                        hex: '#4286f4',
+                        hex: '#0000ff',
                         lat: 38.8,
                         lon: -75.42,
                         hide: 'show'
