@@ -63,7 +63,8 @@ function parseData(rawData, trimArea) {
                         maxspeed: hlp.parseSpeed(
                             n.maxspeed ||
                                 lastWay.tags.maxspeed ||
-                                defaultSpeeds[lastWay.tags.highway]
+                                defaultSpeeds[lastWay.tags.highway] ||
+                                '25mph'
                         ),
                         highway: lastWay.tags.highway
                     });
