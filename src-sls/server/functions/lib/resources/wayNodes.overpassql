@@ -1,4 +1,4 @@
-[out:json][timeout:800];
+[out:json][timeout:85];
 
 way
   ["highway"]
