@@ -121,6 +121,13 @@ custom:
     distributionFolder: client/dist
     indexDocument: index.html
     errorDocument: index.html
+    objectHeaders:
+      index.html:
+        - name: Cache-Control
+          value: no-cache
+      ALL_OBJECTS:
+        - name: Content-Language
+          value: en-US
     routingRules:
       - redirect: 
           hostName: "${file(./slsHelpers.js):getApiUrl}.execute-api.${self:provider.region}.amazonaws.com"
