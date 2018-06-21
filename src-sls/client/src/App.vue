@@ -18,11 +18,15 @@ import MessageBox from './components/MessageBox.vue';
 export default {
     name: 'app',
     data: () => {
-        return {};
+        return {
+            ready: false
+        };
     },
     mounted() {
         this.drawService = new DrawService('app');
         this.dataService = new DataService();
+
+        this.ready = true;
     },
     components: {
         ControlPanel,
@@ -31,9 +35,13 @@ export default {
     },
     methods: {
         async processRequest(mapParams, rawParams) {
+            while (!this.ready) {
+                await hlp.wait(10);
+            }
+
             this.$refs.loadingScreen.toggleVisibility();
-            // const data = await this.dataService.getData(mapParams);
-            await hlp.wait(500);
+            const data = await this.dataService.getData(mapParams);
+            // await hlp.wait(500);
             this.$refs.loadingScreen.toggleVisibility();
 
             const qParam = hlp.urlEncodeObj(rawParams);
@@ -44,7 +52,7 @@ export default {
                     'Copy the new URL in the address bar and use it to come back to this exact map!'
             });
 
-            // this.drawService.draw(data);
+            this.drawService.draw(data);
         }
     }
 };
