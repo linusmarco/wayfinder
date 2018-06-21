@@ -116,11 +116,9 @@ plugins:
   - serverless-finch
 
 custom:
-  
-
   client:
     bucketName: wayfinder-site
-    distributionFolder: client
+    distributionFolder: client/dist
     indexDocument: index.html
     errorDocument: index.html
     routingRules:
