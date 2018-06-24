@@ -142,8 +142,12 @@ export default {
         }
     },
     methods: {
-        toggleExpand() {
-            this.expanded = !this.expanded;
+        toggleExpand(expand) {
+            if (expand !== undefined) {
+                this.expanded = expand;
+            } else {
+                this.expanded = !this.expanded;
+            }
 
             this.$refs.root.style.height = this.expanded ? '96%' : '4rem';
         },

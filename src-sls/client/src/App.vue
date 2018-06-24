@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <ControlPanel @map-it="processRequest"/>
+    <ControlPanel ref="controlPanel" @map-it="processRequest"/>
     <LoadingScreen ref="loadingScreen"/>
     <MessageBox ref="messageBox"/>
   </div>
@@ -135,6 +135,8 @@ export default {
                     document.title,
                     `?saved=${hlp.urlEncodeObj(rawParams)}`
                 );
+
+                this.$refs.controlPanel.toggleExpand(false);
 
                 this.$refs.messageBox.open({
                     label: 'HINT: ',
