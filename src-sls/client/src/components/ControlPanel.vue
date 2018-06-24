@@ -154,7 +154,7 @@ export default {
         addOrigin() {
             this.params.origins.push({
                 name: `Origin ${this.params.origins.length + 1}`,
-                hex: '#4286f4',
+                hex: '#0000ff',
                 lat: 0,
                 lon: 0,
                 hide: 'show'
