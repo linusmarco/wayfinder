@@ -18,7 +18,11 @@ export default {
         };
     },
     methods: {
-        toggleVisibility() {
+        toggleVisibility(message) {
+            if (message) {
+                this.setMessage(message);
+            }
+
             this.hidden = !this.hidden;
 
             if (!this.hidden) {
@@ -34,6 +38,9 @@ export default {
                 this.dots = '';
                 clearInterval(this.loadingInt);
             }
+        },
+        setMessage(message) {
+            this.message = message;
         }
     }
 };
@@ -68,17 +75,17 @@ export default {
 
 .message-holder .text-main {
     height: 3rem;
-    width: 50%;
+    width: 80%;
     line-height: 3rem;
     vertical-align: middle;
 
     position: absolute;
     top: calc(50% - 1.2rem);
-    left: calc(50% - 4rem);
-    margin: -1.5rem 0 0 0;
+    left: 50%;
+    margin: -1.5rem 0 0 -40%;
 
     font-size: 1.8rem;
-    text-align: left;
+    text-align: middle;
 }
 
 .message-holder .text-secondary {
