@@ -110,8 +110,8 @@ export default {
                 ],
                 numTicks: 300,
                 size: {
-                    width: document.getElementById('app').clientWidth,
-                    height: document.getElementById('app').clientHeight,
+                    width: NaN,
+                    height: NaN,
                     margin: {
                         top: 0,
                         right: 0,
@@ -169,6 +169,9 @@ export default {
             mapParams.origins.forEach(o => {
                 o.rgb = hlp.hexToRgb(o.hex);
             });
+
+            mapParams.size.width = document.getElementById('app').clientWidth;
+            mapParams.size.height = document.getElementById('app').clientHeight;
 
             const v = new ParameterValidator();
             v.validate(mapParams);
