@@ -3,81 +3,91 @@ const crypto = require('crypto');
 const hlp = require('./lib/helpers');
 
 async function poll(event) {
-    const S3Params = {
-        Bucket: process.env.BUCKET_NAME,
-        Key: event.queryStringParameters.d
-    };
+    const mapAreaEncoded = event.queryStringParameters.area;
+    const paramsEncoded = event.queryStringParameters.params;
+    const firstReq = Number(event.queryStringParameters.reqNo) === 0;
 
-    try {
-        return await hlp.S3GetUrl(S3Params);
-    } catch (e) {
-        return {
-            statusCode: 404,
-            headers: {
-                'Access-Control-Allow-Origin': '*'
-            },
-            isBase64Encoded: false,
-            body: JSON.stringify({
-                error: e.toString()
-            })
-        };
-    }
-}
+    const params = hlp.urlDecodeObj(paramsEncoded);
 
-async function initialize(event) {
-    const params = JSON.parse(
-        Buffer.from(event.queryStringParameters.d, 'base64').toString()
-    );
-
-    var S3Key = crypto
+    const S3KeyMapArea = crypto
         .createHash('md5')
-        .update(event.queryStringParameters.d)
+        .update(mapAreaEncoded)
         .digest('hex');
 
-    const S3Params = {
-        Bucket: process.env.BUCKET_NAME,
-        Key: `${S3Key}-walked`
-    };
+    const S3KeyParams = crypto
+        .createHash('md5')
+        .update(paramsEncoded)
+        .digest('hex');
 
-    try {
-        return await hlp.S3GetUrl(S3Params);
-    } catch (e) {
-        console.log('could not find cached map');
-
-        try {
+    if (!(await hlp.S3ObjExists(`${S3KeyMapArea}-raw`))) {
+        if (firstReq) {
             await hlp.SNSPublish(
-                { params, S3Key },
+                { params, S3KeyMapArea, S3KeyParams },
                 process.env.GET_DATA_TOPIC_ARN
             );
-
-            return {
-                statusCode: 200,
-                headers: {
-                    'Access-Control-Allow-Origin': '*'
-                },
-                isBase64Encoded: false,
-                body: JSON.stringify({
-                    wait: true,
-                    params,
-                    S3Key
-                })
-            };
-        } catch (e) {
-            return {
-                statusCode: 500,
-                headers: {
-                    'Access-Control-Allow-Origin': '*'
-                },
-                isBase64Encoded: false,
-                body: JSON.stringify({
-                    error: e.toString()
-                })
-            };
         }
+
+        return hlp.constructLambdaResp(
+            200,
+            JSON.stringify({
+                progress: 'noData'
+            })
+        );
+    } else if (!(await hlp.S3ObjExists(`${S3KeyMapArea}-parsed`))) {
+        if (firstReq) {
+            await hlp.SNSPublish(
+                { params, S3KeyMapArea, S3KeyParams },
+                process.env.PARSE_DATA_TOPIC_ARN
+            );
+        }
+
+        return hlp.constructLambdaResp(
+            200,
+            JSON.stringify({
+                progress: 'rawData'
+            })
+        );
+    } else if (!(await hlp.S3ObjExists(`${S3KeyMapArea}-merged`))) {
+        if (firstReq) {
+            await hlp.SNSPublish(
+                { params, S3KeyMapArea, S3KeyParams },
+                process.env.MERGE_DATA_TOPIC_ARN
+            );
+        }
+
+        return hlp.constructLambdaResp(
+            200,
+            JSON.stringify({
+                progress: 'parsedData'
+            })
+        );
+    } else if (!(await hlp.S3ObjExists(`${S3KeyParams}-walked`))) {
+        if (firstReq) {
+            await hlp.SNSPublish(
+                { params, S3KeyMapArea, S3KeyParams },
+                process.env.WALK_DATA_TOPIC_ARN
+            );
+        }
+
+        return hlp.constructLambdaResp(
+            200,
+            JSON.stringify({
+                progress: 'mergedData'
+            })
+        );
+    } else {
+        const walkedUrl = await hlp.S3GetUrl(`${S3KeyParams}-walked`);
+
+        return hlp.constructLambdaResp(
+            200,
+            JSON.stringify({
+                progress: 'walkedData',
+                walkedUrl: walkedUrl
+            })
+        );
     }
 }
 
 module.exports = {
-    initialize,
     poll
 };

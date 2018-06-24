@@ -70,15 +70,6 @@ provider:
         - ${self:provider.environment.WALK_DATA_TOPIC_ARN}
 
 functions:
-  initialize:
-    handler: server/functions/index.initialize
-    timeout: 30
-    events:
-      - http: 
-          path: init
-          method: get
-          cors: true
-
   poll:
     handler: server/functions/index.poll
     timeout: 30
@@ -129,13 +120,6 @@ custom:
         - name: Content-Language
           value: en-US
     routingRules:
-      - redirect: 
-          hostName: "${file(./slsHelpers.js):getApiUrl}.execute-api.${self:provider.region}.amazonaws.com"
-          httpRedirectCode: 301
-          protocol: https
-          replaceKeyPrefixWith: ${self:provider.stage}/init
-        condition:
-          keyPrefixEquals: api/init
       - redirect: 
           hostName: "${file(./slsHelpers.js):getApiUrl}.execute-api.${self:provider.region}.amazonaws.com"
           httpRedirectCode: 301

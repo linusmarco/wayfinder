@@ -19,29 +19,36 @@ function SNSPublish(message, arn) {
     });
 }
 
-async function S3GetUrl(params) {
-    return new Promise((res, rej) => {
-        S3.headObject(params, (err, data) => {
-            if (err) {
-                console.log('no headObject');
-                rej(err);
-            } else {
-                S3.getSignedUrl('getObject', params, (err, data) => {
-                    if (err) {
-                        console.log('no getSignedUrl');
-                        rej(err);
-                    } else {
-                        res({
-                            statusCode: 301,
-                            headers: {
-                                'Access-Control-Allow-Origin': '*',
-                                Location: data
-                            }
-                        });
-                    }
-                });
+async function S3ObjExists(key) {
+    return new Promise(res => {
+        S3.headObject(
+            {
+                Bucket: process.env.BUCKET_NAME,
+                Key: key
+            },
+            err => {
+                res(!err);
             }
-        });
+        );
+    });
+}
+
+async function S3GetUrl(key) {
+    return new Promise(res => {
+        S3.getSignedUrl(
+            'getObject',
+            {
+                Bucket: process.env.BUCKET_NAME,
+                Key: key
+            },
+            (err, data) => {
+                if (err) {
+                    rej(err);
+                } else {
+                    res(data);
+                }
+            }
+        );
     });
 }
 
@@ -104,12 +111,38 @@ function pointInBox(point, bounds) {
     return true;
 }
 
+function urlDecodeObj(encoded) {
+    return JSON.parse(
+        Buffer.from(
+            encoded
+                .replace(/\./g, '+')
+                .replace(/_/g, '/')
+                .replace(/-/g, '='),
+            'base64'
+        ).toString()
+    );
+}
+
+function constructLambdaResp(code, body) {
+    return {
+        statusCode: code,
+        headers: {
+            'Access-Control-Allow-Origin': '*'
+        },
+        isBase64Encoded: false,
+        body: body
+    };
+}
+
 module.exports = {
     requestPromise,
     parseSpeed,
     pointInBox,
     SNSPublish,
+    S3ObjExists,
     S3GetUrl,
     S3Get,
-    S3Put
+    S3Put,
+    urlDecodeObj,
+    constructLambdaResp
 };
