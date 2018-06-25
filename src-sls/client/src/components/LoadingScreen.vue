@@ -1,10 +1,10 @@
 <template>
-  <div id="loading-screen" :style="`display: ${hidden ? 'none' : 'block'}`">
-      <div class="message-holder">
-          <p class="text-main">{{ message }}{{ dots }}</p>
-          <p class="text-secondary">(this may take up to a couple minutes for large areas)</p>
-      </div>
-  </div>
+    <div id="loading-screen" :style="`display: ${hidden ? 'none' : 'block'}`">
+        <div class="message-holder">
+            <p class="text-main">{{ dots }}{{ message }}{{ dots }}</p>
+            <p class="text-secondary">(this may take up to a couple minutes for large areas)</p>
+        </div>
+    </div>
 </template>
 
 <script>
