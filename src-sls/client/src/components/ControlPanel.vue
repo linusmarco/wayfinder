@@ -1,84 +1,87 @@
 <template>
-  <div id="control-panel" ref="root">
-    <div ref="head" class="control-panel-head">
-      <span ref="expandToggle" class="expand-toggle" @click="toggleExpand">
-        <span class="big">{{ expanded ? '&minus;' : '+' }} </span>
-        <span class="little">{{ expanded ? 'collapse' : 'expand' }}</span>
-      </span>
-    </div>
-    <div ref="body" class="control-panel-body">
-      
-      <h3 class="section-title">Map bounds (lat/long):</h3>
-      <label class="bound-input-label" for="northBoundInput">
-        <span>North</span>
-        <input v-model="params.mapArea.n" type="number" step=".0001" min="-90" max="90">
-      </label>
-      <label class="bound-input-label" for="southBoundInput">
-        <span>South</span>
-        <input v-model="params.mapArea.s" type="number" step=".0001" min="-180" max="180">
-      </label>
-      <label class="bound-input-label" for="eastBoundInput">
-        <span>East</span>
-        <input v-model="params.mapArea.e" type="number" step=".0001" min="-90" max="90">
-      </label>
-      <label class="bound-input-label" for="westBoundInput">
-        <span>West</span>
-        <input v-model="params.mapArea.w" type="number" step=".0001" min="-180" max="180">
-      </label>
-      
-      <br>
-      
-      <h3 class="section-title">Measure proximity by:</h3>
-      <div class="radio-group">
-        <input v-model="params.metric" type="radio" name="dist-metric" value="time" id="dist-metric-input-time">
-        <label class="radio-input-label" for="dist-metric-input-time">Travel Time</label>
-        <input v-model="params.metric" type="radio" name="dist-metric" value="dist" id="dist-metric-input-dist">
-        <label class="radio-input-label" for="dist-metric-input-dist">Travel Distance</label>
-      </div>
-      
-      <br>
-
-      <h3 class="section-title">Origin points:</h3>
-      <div v-for="(origin, i) in params.origins" :key="i" class="origin-point-fieldset-holder">
-        <div class="remove-origin-button" @click="removeOrigin(i)">
-          <span class="big">&times; </span>
-          <span class="little">remove</span>
+    <div id="control-panel" ref="root">
+        <div ref="head" class="control-panel-head">
+            <span ref="expandToggle" class="expand-toggle" @click="toggleExpand">
+                <span class="big">{{ expanded ? '&minus;' : '+' }} </span>
+                <span class="little">{{ expanded ? 'collapse' : 'expand' }}</span>
+            </span>
         </div>
+        <div ref="body" class="control-panel-body">
 
-        <label class="origin-loc-input-label">
-          <span>Name</span>
-          <input v-model="params.origins[i].name" type="text">
-        </label>
-        <label class="origin-loc-input-label">
-          <span>Color</span>
-          <input v-model="params.origins[i].hex" type="color">
-        </label>
-        <label class="origin-loc-input-label">
-          <span>Latitude</span>
-          <input v-model="params.origins[i].lat" type="number" step=".0001" min="-90" max="90">
-        </label>
-        <label class="origin-loc-input-label">
-          <span>Longitude</span>
-          <input v-model="params.origins[i].lon" type="number" step=".0001" min="-180" max="180">
-        </label>
-        <div class="radio-group">
-          <input v-model="params.origins[i].hide" type="radio" :name="`origin-hide-${i}`" value="hide" :id="`origin-hide-input-hide-${i}`">
-          <label class="radio-input-label" :for="`origin-hide-input-hide-${i}`">Hide</label>
-          <input v-model="params.origins[i].hide" type="radio" :name="`origin-hide-${i}`" value="show" :id="`origin-hide-input-show-${i}`">
-          <label class="radio-input-label" :for="`origin-hide-input-show-${i}`">Show</label>
+            <h3 class="section-title">Map bounds (lat/long):</h3>
+            <label class="bound-input-label" for="northBoundInput">
+                <span>North</span>
+                <input v-model="params.mapArea.n" type="number" step=".0001" min="-90" max="90">
+            </label>
+            <label class="bound-input-label" for="southBoundInput">
+                <span>South</span>
+                <input v-model="params.mapArea.s" type="number" step=".0001" min="-180" max="180">
+            </label>
+            <label class="bound-input-label" for="eastBoundInput">
+                <span>East</span>
+                <input v-model="params.mapArea.e" type="number" step=".0001" min="-90" max="90">
+            </label>
+            <label class="bound-input-label" for="westBoundInput">
+                <span>West</span>
+                <input v-model="params.mapArea.w" type="number" step=".0001" min="-180" max="180">
+            </label>
+
+            <br>
+
+            <h3 class="section-title">Measure proximity by:</h3>
+            <div class="radio-group">
+                <input v-model="params.metric" type="radio" name="dist-metric" value="time" id="dist-metric-input-time">
+                <label class="radio-input-label" for="dist-metric-input-time">Travel Time</label>
+                <input v-model="params.metric" type="radio" name="dist-metric" value="dist" id="dist-metric-input-dist">
+                <label class="radio-input-label" for="dist-metric-input-dist">Travel Distance</label>
+            </div>
+
+            <br>
+
+            <h3 class="section-title">Origin points:</h3>
+            <div v-for="(origin, i) in params.origins" :key="i" class="origin-point-fieldset-holder">
+                <div class="remove-origin-button" @click="removeOrigin(i)">
+                    <span class="big">&times; </span>
+                    <span class="little">remove</span>
+                </div>
+
+                <label class="origin-loc-input-label">
+                    <span>Name</span>
+                    <input v-model="params.origins[i].name" type="text">
+                </label>
+                <label class="origin-loc-input-label">
+                    <span>Color</span>
+                    <input v-model="params.origins[i].hex" type="color">
+                </label>
+                <label class="origin-loc-input-label">
+                    <span>Latitude</span>
+                    <input v-model="params.origins[i].lat" type="number" step=".0001" min="-90" max="90">
+                </label>
+                <label class="origin-loc-input-label">
+                    <span>Longitude</span>
+                    <input v-model="params.origins[i].lon" type="number" step=".0001" min="-180" max="180">
+                </label>
+                <div class="radio-group">
+                    <input v-model="params.origins[i].hide" type="radio" :name="`origin-hide-${i}`" value="hide" :id="`origin-hide-input-hide-${i}`">
+                    <label class="radio-input-label" :for="`origin-hide-input-hide-${i}`">Hide</label>
+                    <input v-model="params.origins[i].hide" type="radio" :name="`origin-hide-${i}`" value="show" :id="`origin-hide-input-show-${i}`">
+                    <label class="radio-input-label" :for="`origin-hide-input-show-${i}`">Show</label>
+                </div>
+                <br>
+            </div>
+
+            <br>
+
+            <div id="add-origin" @click="addOrigin">
+                <span class="big">+ </span>
+                <span class="little">Add origin point</span>
+            </div>
+
         </div>
-        <br>
-      </div>
-
-      <br>
-
-      <div id="add-origin" @click="addOrigin"><span class="big">+ </span><span class="little">Add origin point</span></div>
-        
+        <div @click="mapIt" class="control-panel-foot">
+            Map it!
+        </div>
     </div>
-    <div @click="mapIt" class="control-panel-foot">
-      Map it!
-    </div>
-  </div>
 </template>
 
 <script>
@@ -111,7 +114,7 @@ export default {
                         name: 'Harvard Square T',
                         hex: '#0000ff',
                         lat: 42.3734,
-                        lon: -71.1190,
+                        lon: -71.119,
                         hide: 'show'
                     }
                 ],
@@ -150,7 +153,7 @@ export default {
     },
     methods: {
         toggleExpand(expand) {
-            if (expand !== undefined) {
+            if (expand === true || expand === false) {
                 this.expanded = expand;
             } else {
                 this.expanded = !this.expanded;
