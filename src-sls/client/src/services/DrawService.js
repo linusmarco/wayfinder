@@ -39,6 +39,8 @@ export default class DrawService {
 
         this.context.clearRect(0, 0, this.width, this.height);
 
+        this.drawAll(this.nodes, this.origins, false);
+
         this.animate();
     }
 
@@ -69,7 +71,7 @@ export default class DrawService {
             this.context.arc(
                 o.loc[0],
                 o.loc[1],
-                this.lineWidth * 4 / this.scale,
+                (this.lineWidth * 4) / this.scale,
                 0,
                 2 * Math.PI,
                 false
@@ -87,12 +89,12 @@ export default class DrawService {
         this.context.strokeRect(0, 0, this.width, this.height);
     }
 
-    drawAll(nodes, origins) {
+    drawAll(nodes, origins, color) {
         nodes.forEach(n => {
             this.context.beginPath();
             this.context.moveTo(n.pLoc[0], n.pLoc[1]);
             this.context.lineTo(n.loc[0], n.loc[1]);
-            this.context.strokeStyle = n.color;
+            this.context.strokeStyle = color === false ? '#c6c6c6' : n.color;
             this.context.lineWidth = this.lineWidth / this.scale;
             this.context.lineCap = 'round';
             this.context.stroke();
