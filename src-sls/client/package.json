@@ -18,7 +18,8 @@
     },
     "dependencies": {
         "vue": "^2.5.16",
-        "d3": "^5.5.0"
+        "d3": "^5.5.0",
+        "d3-delaunay": "^3.1.7"
     },
     "devDependencies": {
         "@vue/cli-plugin-babel": "^3.0.0-beta.15",

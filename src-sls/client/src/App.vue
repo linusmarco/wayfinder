@@ -1,9 +1,9 @@
 <template>
-  <div id="app">
-    <ControlPanel ref="controlPanel" @map-it="processRequest"/>
-    <LoadingScreen ref="loadingScreen"/>
-    <MessageBox ref="messageBox"/>
-  </div>
+    <div id="app">
+        <ControlPanel ref="controlPanel" @map-it="processRequest" />
+        <LoadingScreen ref="loadingScreen" />
+        <MessageBox ref="messageBox" />
+    </div>
 </template>
 
 <script>
@@ -166,5 +166,28 @@ body,
     overflow: hidden;
     width: 100%;
     height: 100%;
+}
+
+#app canvas,
+#app svg {
+    position: fixed;
+    left: 0;
+    top: 0;
+}
+
+#app canvas {
+    z-index: 0;
+}
+
+#app svg {
+    z-index: 1;
+}
+
+#app #control-panel {
+    z-index: 2;
+}
+
+#app #message-box {
+    z-index: 3;
 }
 </style>

@@ -157,6 +157,7 @@ function walk(data, origins, metric, numTicks, size) {
             'pLoc',
             'timeIdx',
             'color',
+            'originId',
             metric === 'dist' ? 'dist' : 'time'
         ]);
     });

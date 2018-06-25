@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import { Delaunay } from 'd3-delaunay';
 
 export default class DrawService {
     constructor(containerId, lineWidth, frameRate) {
@@ -17,6 +18,12 @@ export default class DrawService {
             .attr('width', this.width);
 
         this.context = this.canvas.node().getContext('2d');
+
+        this.svg = d3
+            .select(this.container)
+            .append('svg')
+            .attr('height', this.height)
+            .attr('width', this.width);
 
         this.scale = 1;
     }
@@ -44,6 +51,93 @@ export default class DrawService {
         this.animate();
     }
 
+    drawAreas(nodes) {
+        const origins = {};
+        nodes.forEach(n => {
+            const originId = String(n.originId);
+            if (origins[originId]) {
+                origins[originId].pts.push(n.loc);
+            } else {
+                origins[originId] = {
+                    color: n.color,
+                    pts: [n.loc]
+                };
+            }
+        });
+
+        Object.keys(origins).forEach(o => {
+            const path = d3.path();
+            const { hull, triangles, points } = Delaunay.from(origins[o].pts);
+            const n = hull.length;
+            let i0,
+                i1 = triangles[hull[n - 1]] * 2;
+            for (let i = 0; i < n; ++i) {
+                (i0 = i1), (i1 = triangles[hull[i]] * 2);
+                if (i === 0) path.moveTo(points[i0], points[i0 + 1]);
+                else path.lineTo(points[i1], points[i1 + 1]);
+            }
+            path.closePath();
+
+            origins[String(o)].path = path;
+        });
+
+        const areas = this.svg
+            .selectAll('.area')
+            .data(Object.keys(origins))
+            .enter()
+            .append('g')
+            .on('mouseover', function() {
+                d3.select(this)
+                    .select('path')
+                    .style('opacity', 0.3);
+                d3.select(this)
+                    .selectAll('text')
+                    .style('opacity', 1);
+            })
+            .on('mouseout', function() {
+                d3.select(this)
+                    .select('path')
+                    .style('opacity', 0);
+                d3.select(this)
+                    .selectAll('text')
+                    .style('opacity', 0);
+            });
+
+        areas
+            .append('path')
+            .attr('stroke', 'none')
+            .attr('fill', d => this.origins[Number(d)].color)
+            .style('opacity', 0)
+            .attr('d', d => origins[d].path.toString());
+
+        areas
+            .append('text')
+            .attr('x', d => this.origins[Number(d)].loc[0])
+            .attr('y', d => this.origins[Number(d)].loc[1] - 15)
+            .attr('stroke', 'white')
+            .attr('stroke-width', '0.2rem')
+            .attr('fill', 'white')
+            .attr('dominant-baseline', 'central')
+            .attr('text-anchor', 'middle')
+            .style('opacity', 0)
+            .style('font-size', '1.3rem')
+            .style('font-weight', 'bold')
+            .text(d => this.origins[Number(d)].name);
+
+        areas
+            .append('text')
+            .attr('x', d => this.origins[Number(d)].loc[0])
+            .attr('y', d => this.origins[Number(d)].loc[1] - 15)
+            .attr('stroke', 'none')
+            .attr('fill', 'black')
+            .attr('dominant-baseline', 'central')
+            .attr('text-anchor', 'middle')
+            .style('opacity', 0)
+            .style('font-size', '1.3rem')
+            .style('font-weight', 'bold')
+            .text(d => this.origins[Number(d)].name);
+    }
+
     animate() {
         this.drawOrigins(this.origins);
 
@@ -55,6 +149,8 @@ export default class DrawService {
             if (curTimeIdx === this.maxTimeIdx + 1) {
                 clearInterval(show);
 
+                this.drawAreas(this.nodes);
+
                 this.canvas.call(
                     d3
                         .zoom()
@@ -62,7 +158,7 @@ export default class DrawService {
                         .on('zoom', this.zoomed.bind(this))
                 );
             }
-        }, this.frameRate || 50);
+        }, this.frameRate);
     }
 
     drawOrigins(origins) {
@@ -112,6 +208,7 @@ export default class DrawService {
         this.context.translate(transform.x, transform.y);
         this.context.scale(this.scale, this.scale);
         this.drawAll(this.nodes, this.origins);
+        this.drawAreas(this.nodes);
         this.context.restore();
     }
 }
