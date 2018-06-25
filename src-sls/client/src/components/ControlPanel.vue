@@ -93,18 +93,25 @@ export default {
             params: {
                 mapArea: {
                     id: null,
-                    s: 38.66,
-                    w: -75.64,
-                    n: 38.96,
-                    e: -75.03
+                    s: 42.3448,
+                    w: -71.1607,
+                    n: 42.4009,
+                    e: -71.0557
                 },
                 metric: 'time',
                 origins: [
                     {
-                        name: 'Origin 1',
+                        name: 'Central Square T',
+                        hex: '#ff0000',
+                        lat: 42.3653,
+                        lon: -71.1036,
+                        hide: 'show'
+                    },
+                    {
+                        name: 'Harvard Square T',
                         hex: '#0000ff',
-                        lat: 38.8,
-                        lon: -75.42,
+                        lat: 42.3734,
+                        lon: -71.1190,
                         hide: 'show'
                     }
                 ],
