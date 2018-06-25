@@ -25,6 +25,8 @@ export default class DrawService {
             .attr('height', this.height)
             .attr('width', this.width);
 
+        this.g = this.svg.append('g');
+
         this.scale = 1;
     }
 
@@ -81,7 +83,7 @@ export default class DrawService {
             origins[String(o)].path = path;
         });
 
-        const areas = this.svg
+        const areas = this.g
             .selectAll('.area')
             .data(Object.keys(origins))
             .enter()
@@ -113,7 +115,7 @@ export default class DrawService {
         areas
             .append('text')
             .attr('x', d => this.origins[Number(d)].loc[0])
-            .attr('y', d => this.origins[Number(d)].loc[1] - 15)
+            .attr('y', d => this.origins[Number(d)].loc[1] - 20)
             .attr('stroke', 'white')
             .attr('stroke-width', '0.2rem')
             .attr('fill', 'white')
@@ -127,7 +129,7 @@ export default class DrawService {
         areas
             .append('text')
             .attr('x', d => this.origins[Number(d)].loc[0])
-            .attr('y', d => this.origins[Number(d)].loc[1] - 15)
+            .attr('y', d => this.origins[Number(d)].loc[1] - 20)
             .attr('stroke', 'none')
             .attr('fill', 'black')
             .attr('dominant-baseline', 'central')
@@ -136,6 +138,13 @@ export default class DrawService {
             .style('font-size', '1.3rem')
             .style('font-weight', 'bold')
             .text(d => this.origins[Number(d)].name);
+
+        this.g.call(
+            d3
+                .zoom()
+                .scaleExtent([1 / 2, 8])
+                .on('zoom', this.zoomed.bind(this))
+        );
     }
 
     animate() {
@@ -150,13 +159,6 @@ export default class DrawService {
                 clearInterval(show);
 
                 this.drawAreas(this.nodes);
-
-                this.canvas.call(
-                    d3
-                        .zoom()
-                        .scaleExtent([1 / 2, 8])
-                        .on('zoom', this.zoomed.bind(this))
-                );
             }
         }, this.frameRate);
     }
@@ -202,6 +204,9 @@ export default class DrawService {
 
     zoomed() {
         const transform = d3.event.transform;
+
+        this.g.attr('transform', transform);
+
         this.scale = transform.k;
         this.context.save();
         this.context.clearRect(0, 0, this.width, this.height);

@@ -181,6 +181,7 @@ body,
 
 #app svg {
     z-index: 1;
+    cursor: default;
 }
 
 #app #control-panel {
