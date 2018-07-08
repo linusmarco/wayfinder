@@ -1,5 +1,6 @@
 <template>
     <div id="app">
+        <MapWindow ref="mapWindow" />
         <ControlPanel ref="controlPanel" @map-it="processRequest" />
         <LoadingScreen ref="loadingScreen" />
         <MessageBox ref="messageBox" />
@@ -9,9 +10,9 @@
 <script>
 import hlp from './services/Helpers';
 import DataService from './services/DataService';
-import DrawService from './services/DrawService';
 
 import ControlPanel from './components/ControlPanel.vue';
+import MapWindow from './components/MapWindow';
 import LoadingScreen from './components/LoadingScreen.vue';
 import MessageBox from './components/MessageBox.vue';
 
@@ -23,13 +24,15 @@ export default {
         };
     },
     mounted() {
-        this.drawService = new DrawService('app');
         this.dataService = new DataService();
+
+        this.$refs.mapWindow.setup();
 
         this.ready = true;
     },
     components: {
         ControlPanel,
+        MapWindow,
         LoadingScreen,
         MessageBox
     },
@@ -144,7 +147,7 @@ export default {
                         'Copy the new URL in the address bar and use it to come back to this exact map!'
                 });
 
-                this.drawService.draw(data);
+                this.$refs.mapWindow.update(data);
             }
         }
     }
@@ -166,22 +169,6 @@ body,
     overflow: hidden;
     width: 100%;
     height: 100%;
-}
-
-#app canvas,
-#app svg {
-    position: fixed;
-    left: 0;
-    top: 0;
-}
-
-#app canvas {
-    z-index: 0;
-}
-
-#app svg {
-    z-index: 1;
-    cursor: default;
 }
 
 #app #control-panel {

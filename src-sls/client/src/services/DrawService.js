@@ -1,33 +1,104 @@
 import * as d3 from 'd3';
 import { Delaunay } from 'd3-delaunay';
+import { tile } from 'd3-tile';
 
 export default class DrawService {
-    constructor(containerId, lineWidth, frameRate) {
-        // this.containerId = containerId;
+    constructor(
+        parentId,
+        tileContainerId,
+        routeContainerId,
+        labelContainerId,
+        lineWidth,
+        frameRate
+    ) {
+        this.tileSize = 256;
         this.lineWidth = lineWidth || 1.5;
         this.frameRate = frameRate || 50;
 
-        this.container = document.getElementById(containerId);
-        this.width = this.container.clientWidth;
-        this.height = this.container.clientWidth;
+        this.parent = document.getElementById(parentId);
+        this.tileContainer = document.getElementById(tileContainerId);
+        this.routeContainer = document.getElementById(routeContainerId);
+        this.labelContainer = document.getElementById(labelContainerId);
+        this.width = this.parent.clientWidth;
+        this.height = this.parent.clientHeight;
+
+        this.tileSvg = d3
+            .select(this.tileContainer)
+            .attr('height', this.height)
+            .attr('width', this.width);
+
+        this.tileG = this.tileSvg.append('g');
+
+        this.tileDef = tile().size([this.width, this.height]);
+
+        this.zoomDef = d3
+            .zoom()
+            .scaleExtent([1 << 21, 1 << 23])
+            .on('zoom', this.zoomed.bind(this));
 
         this.canvas = d3
-            .select(this.container)
-            .append('canvas')
+            .select(this.routeContainer)
             .attr('height', this.height)
             .attr('width', this.width);
 
         this.context = this.canvas.node().getContext('2d');
 
-        this.svg = d3
-            .select(this.container)
-            .append('svg')
+        this.labelSvg = d3
+            .select(this.labelContainer)
             .attr('height', this.height)
             .attr('width', this.width);
 
-        this.g = this.svg.append('g');
+        this.labelG = this.labelSvg.append('g');
+
+        this.pi = Math.PI;
+        this.tau = 2 * this.pi;
+
+        this.projection = d3
+            .geoMercator()
+            .scale(1 / this.tau)
+            .translate([0, 0]);
 
         this.scale = 1;
+    }
+
+    drawTiles() {
+        const center = this.projection([-71.07, 42.38]);
+
+        this.labelSvg.call(this.zoomDef).call(
+            this.zoomDef.transform,
+            d3.zoomIdentity
+                .translate(this.width / 2, this.height / 2)
+                .scale(1 << 21)
+                .translate(-center[0], -center[1])
+        );
+
+        // const that = this;
+        // this.labelSvg.on('click', function() {
+        //     console.log(that.projection.invert(d3.mouse(this)));
+        // });
+    }
+
+    getBounds() {
+        const beg = this.projection.invert([0, 0]);
+        const end = this.projection.invert([this.width, this.height]);
+
+        return {
+            id: null,
+            n: beg[1],
+            e: beg[0],
+            s: end[1],
+            w: end[0]
+        };
+    }
+
+    url(d) {
+        return `https://api.mapbox.com/v4/mapbox.streets/${d.z}/${d.x}/${
+            d.y
+        }.png?access_token=pk.eyJ1IjoibG1hcmNvMTYzIiwiYSI6ImNqNm51YTNzdzBjNWkyd28xc3hrMmFiY2YifQ.I0flvL7maPRg65Zi85aW_Q`;
+    }
+
+    floor(k) {
+        return Math.pow(2, Math.floor(Math.log(k) / Math.LN2));
     }
 
     draw(data) {
@@ -83,7 +154,7 @@ export default class DrawService {
             origins[String(o)].path = path;
         });
 
-        const areas = this.g
+        const areas = this.labelG
             .selectAll('.area')
             .data(Object.keys(origins))
             .enter()
@@ -138,13 +209,6 @@ export default class DrawService {
             .style('font-size', '1.3rem')
             .style('font-weight', 'bold')
             .text(d => this.origins[Number(d)].name);
-
-        this.g.call(
-            d3
-                .zoom()
-                .scaleExtent([1 / 2, 8])
-                .on('zoom', this.zoomed.bind(this))
-        );
     }
 
     animate() {
@@ -202,18 +266,61 @@ export default class DrawService {
         this.drawOrigins(origins);
     }
 
+    stringify(scale, translate) {
+        const k = scale / this.tileSize;
+        const r = scale % 1 ? Number : Math.round;
+        return (
+            'translate(' +
+            r(translate[0] * scale) +
+            ',' +
+            r(translate[1] * scale) +
+            ') scale(' +
+            k +
+            ')'
+        );
+    }
+
     zoomed() {
         const transform = d3.event.transform;
 
-        this.g.attr('transform', transform);
+        let tiles = this.tileDef
+            .scale(transform.k)
+            .translate([transform.x, transform.y])();
+
+        this.projection
+            .scale(transform.k / this.tau)
+            .translate([transform.x, transform.y]);
+
+        let image = this.tileG
+            .attr('transform', this.stringify(tiles.scale, tiles.translate))
+            .selectAll('image')
+            .data(tiles, this.url);
+
+        image.exit().remove();
+
+        image
+            .enter()
+            .append('image')
+            .attr('xlink:href', this.url)
+            .attr('x', d => d.x * this.tileSize)
+            .attr('y', d => d.y * this.tileSize)
+            .attr('width', this.tileSize)
+            .attr('height', this.tileSize)
+            .style('stroke', 'black');
+
+        this.labelG.attr('transform', transform);
 
         this.scale = transform.k;
         this.context.save();
         this.context.clearRect(0, 0, this.width, this.height);
         this.context.translate(transform.x, transform.y);
         this.context.scale(this.scale, this.scale);
-        this.drawAll(this.nodes, this.origins);
-        this.drawAreas(this.nodes);
+
+        if (this.nodes) {
+            this.drawAll(this.nodes, this.origins);
+            this.drawAreas(this.nodes);
+        }
+
         this.context.restore();
     }
 }

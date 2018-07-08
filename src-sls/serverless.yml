@@ -4,7 +4,7 @@ provider:
   name: aws
   profile: serverless-admin
   runtime: nodejs8.10
-  stage: dev
+  stage: prod
   region: us-east-1
   environment:
     BUCKET_NAME: ${self:service}-${self:provider.stage}-assets
@@ -108,7 +108,7 @@ plugins:
 
 custom:
   client:
-    bucketName: wayfinder-site
+    bucketName: wayfinder-${self:provider.stage}-site
     distributionFolder: client/dist
     indexDocument: index.html
     errorDocument: index.html
