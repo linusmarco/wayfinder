@@ -1,11 +1,11 @@
 <template>
-  <div id="message-box" :style="`bottom: ${hidden ? '-4rem' : '0'}`">
-      <div class="close-button" @click="close">&times;</div>
-      <p ref="message" class="message-holder">
-          <span class="label">{{ label }}</span>
-          <span class="message">{{ message }}</span> 
-      </p>
-  </div>
+    <div id="message-box" :style="`bottom: ${hidden ? '-4rem' : '0'}`">
+        <div class="close-button" @click="close">&times;</div>
+        <p ref="message" class="message-holder">
+            <span class="label">{{ label }}</span>
+            <span class="message">{{ message }}</span>
+        </p>
+    </div>
 </template>
 
 <script>
@@ -41,7 +41,7 @@ export default {
     position: fixed;
     left: 0;
     right: 0;
-    margin: 0 10% 0 calc(2% + 400px + 10%);
+    margin: 0 20%;
 
     height: 4rem;
     overflow: hidden;

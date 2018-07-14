@@ -1,7 +1,7 @@
 <template>
     <div id="app">
-        <MapWindow ref="mapWindow" />
-        <ControlPanel ref="controlPanel" @map-it="processRequest" />
+        <MapWindow ref="mapWindow" @map-it="processRequest" />
+        <!-- <ControlPanel ref="controlPanel" @map-it="processRequest" /> -->
         <LoadingScreen ref="loadingScreen" />
         <MessageBox ref="messageBox" />
     </div>
@@ -37,7 +37,7 @@ export default {
         MessageBox
     },
     methods: {
-        async processRequest(mapParams, rawParams) {
+        async processRequest() {
             while (!this.ready) {
                 await hlp.wait(10);
             }
@@ -45,6 +45,9 @@ export default {
             this.$refs.loadingScreen.toggleVisibility(
                 '(Step 1 of 4) Loading raw map data'
             );
+
+            const mapParams = this.$store.getters.calcParams;
+            const rawParams = this.$store.getters.rawParams;
 
             const encodedArea = hlp.urlEncodeObj(mapParams.mapArea);
             const encodedFull = hlp.urlEncodeObj(mapParams);
@@ -138,8 +141,6 @@ export default {
                     document.title,
                     `?saved=${hlp.urlEncodeObj(rawParams)}`
                 );
-
-                this.$refs.controlPanel.toggleExpand(false);
 
                 this.$refs.messageBox.open({
                     label: 'HINT: ',
