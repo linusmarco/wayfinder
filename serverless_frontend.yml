@@ -1,0 +1,37 @@
+service: wayfinder-frontend
+
+frameworkVersion: '1.29.2'
+
+package:
+    exclude:
+        - '**/**'
+
+provider:
+    name: aws
+    profile: serverless-admin
+    runtime: nodejs8.10
+    stage: ${opt:stage}
+    region: us-east-1
+
+plugins:
+    - serverless-finch
+
+custom:
+    client:
+        bucketName: ${self:service}-${opt:stage}-site
+        distributionFolder: client/dist
+        indexDocument: index.html
+        errorDocument: index.html
+        objectHeaders:
+            index.html:
+                - name: Cache-Control
+                  value: no-cache
+            error.html:
+                - name: Cache-Control
+                  value: no-cache
+            assets/:
+                - name: Cache-Control
+                  value: max-age=31536000
+            ALL_OBJECTS:
+                - name: Content-Language
+                  value: en-US

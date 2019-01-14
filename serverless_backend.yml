@@ -1,0 +1,176 @@
+service: wayfinder-backend
+
+frameworkVersion: '1.29.2'
+
+package:
+    exclude:
+        - client/**
+        - scripts/**
+
+provider:
+    name: aws
+    profile: serverless-admin
+    runtime: nodejs8.10
+    stage: ${opt:stage}
+    region: us-east-1
+
+    environment:
+        BUCKET_NAME: ${self:service}-${self:provider.stage}-assets
+
+        GET_DATA_TOPIC: ${self:service}-${self:provider.stage}-getData
+        GET_DATA_TOPIC_ARN:
+            Fn::Join:
+                - ':'
+                - - arn
+                  - aws
+                  - sns
+                  - Ref: AWS::Region
+                  - Ref: AWS::AccountId
+                  - ${self:provider.environment.GET_DATA_TOPIC}
+
+        PARSE_DATA_TOPIC: ${self:service}-${self:provider.stage}-parseData
+        PARSE_DATA_TOPIC_ARN:
+            Fn::Join:
+                - ':'
+                - - arn
+                  - aws
+                  - sns
+                  - Ref: AWS::Region
+                  - Ref: AWS::AccountId
+                  - ${self:provider.environment.PARSE_DATA_TOPIC}
+
+        MERGE_DATA_TOPIC: ${self:service}-${self:provider.stage}-mergeData
+        MERGE_DATA_TOPIC_ARN:
+            Fn::Join:
+                - ':'
+                - - arn
+                  - aws
+                  - sns
+                  - Ref: AWS::Region
+                  - Ref: AWS::AccountId
+                  - ${self:provider.environment.MERGE_DATA_TOPIC}
+
+        WALK_DATA_TOPIC: ${self:service}-${self:provider.stage}-walkData
+        WALK_DATA_TOPIC_ARN:
+            Fn::Join:
+                - ':'
+                - - arn
+                  - aws
+                  - sns
+                  - Ref: AWS::Region
+                  - Ref: AWS::AccountId
+                  - ${self:provider.environment.WALK_DATA_TOPIC}
+
+    iamRoleStatements:
+        - Effect: Allow
+          Action:
+              - s3:PutObject
+              - s3:GetObject
+          Resource: 'arn:aws:s3:::${self:service}-${self:provider.stage}-assets/*'
+        - Effect: 'Allow'
+          Action:
+              - 'sns:Publish'
+          Resource:
+              - ${self:provider.environment.GET_DATA_TOPIC_ARN}
+              - ${self:provider.environment.PARSE_DATA_TOPIC_ARN}
+              - ${self:provider.environment.MERGE_DATA_TOPIC_ARN}
+              - ${self:provider.environment.WALK_DATA_TOPIC_ARN}
+
+functions:
+    poll:
+        handler: server/functions/index.poll
+        timeout: 30
+        events:
+            - http:
+                  path: poll
+                  method: get
+                  cors: true
+
+    getData:
+        handler: server/functions/processor.getData
+        timeout: 90
+        events:
+            - sns: ${self:provider.environment.GET_DATA_TOPIC}
+
+    parseData:
+        handler: server/functions/processor.parseData
+        timeout: 90
+        events:
+            - sns: ${self:provider.environment.PARSE_DATA_TOPIC}
+
+    mergeData:
+        handler: server/functions/processor.mergeData
+        timeout: 90
+        events:
+            - sns: ${self:provider.environment.MERGE_DATA_TOPIC}
+
+    walkData:
+        handler: server/functions/processor.walkData
+        timeout: 90
+        events:
+            - sns: ${self:provider.environment.WALK_DATA_TOPIC}
+
+custom:
+    url:
+        dev:
+            - wayfinder-dev.linusmarco.com
+        prod:
+            - wayfinder.linusmarco.com
+    cert:
+        dev: 'arn:aws:acm:us-east-1:562995553656:certificate/ff4e42e0-eca7-423c-81d3-d7f05ba1ad59'
+        prod: 'arn:aws:acm:us-east-1:562995553656:certificate/ff4e42e0-eca7-423c-81d3-d7f05ba1ad59'
+
+resources:
+    Resources:
+        S3Assets:
+            Type: AWS::S3::Bucket
+            Properties:
+                BucketName: ${self:service}-${self:provider.stage}-assets
+                CorsConfiguration:
+                    CorsRules:
+                        - AllowedMethods:
+                              - GET
+                              - HEAD
+                          AllowedOrigins:
+                              - '*'
+
+        AppCloudFrontDistribution:
+            Type: AWS::CloudFront::Distribution
+            Properties:
+                DistributionConfig:
+                    Origins:
+                        - DomainName: wayfinder-frontend-${self:provider.stage}-site.s3-website-${self:provider.region}.amazonaws.com
+                          ## An identifier for the origin which must be unique within the distribution
+                          Id: S3-Website-wayfinder-frontend-${self:provider.stage}-site.s3-website-${self:provider.region}.amazonaws.com
+                          CustomOriginConfig:
+                              HTTPPort: 80
+                              HTTPSPort: 443
+                              OriginProtocolPolicy: http-only
+                    Aliases: ${self:custom.url.${self:provider.stage}}
+                    Enabled: 'true'
+                    DefaultRootObject: index.html
+                    PriceClass: PriceClass_100
+                    HttpVersion: http2
+                    DefaultCacheBehavior:
+                        AllowedMethods:
+                            - DELETE
+                            - GET
+                            - HEAD
+                            - OPTIONS
+                            - PATCH
+                            - POST
+                            - PUT
+                        ## The origin id defined above
+                        TargetOriginId: S3-Website-wayfinder-frontend-${self:provider.stage}-site.s3-website-${self:provider.region}.amazonaws.com
+                        ## Defining if and how the QueryString and Cookies are forwarded to the origin which in this case is S3
+                        ForwardedValues:
+                            QueryString: 'false'
+                            Cookies:
+                                Forward: none
+                        ## The protocol that users can use to access the files in the origin. To allow HTTP use `allow-all`
+                        ViewerProtocolPolicy: redirect-to-https
+                    ## The certificate to use when viewers use HTTPS to request objects.
+                    ViewerCertificate:
+                        AcmCertificateArn: ${self:custom.cert.${self:provider.stage}}
+                        SslSupportMethod: sni-only
+                        MinimumProtocolVersion: 'TLSv1.1_2016'
